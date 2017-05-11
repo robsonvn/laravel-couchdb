@@ -1,0 +1,26 @@
+{
+  "name": "robsonvn/laravel-doctrine-couchdb",
+  "version" : "0.0.1",
+  "description": "A doctrine/couchdb Bundle for the Laravel 5",
+  "authors": [
+    {
+      "name": "Robson Nascimento",
+      "email": "robsonvnasc@gmail.com"
+    }
+  ],
+  "require": {
+    "illuminate/database": "^5.2",
+    "illuminate/support": "^5.2",
+    "doctrine/couchdb":"^1.0.0-beta4",
+    "doctrine/couchdb-odm": "v1.0.0-alpha3"
+  },
+  "require-dev":{
+    "phpunit/phpunit": "@stable"
+  },
+  "autoload": {
+        "psr-4": {
+            "Robsonvn\\CouchDB\\": "src"
+        }
+   },
+  "minimum-stability": "dev"
+}

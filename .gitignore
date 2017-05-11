@@ -1,0 +1,3 @@
+# Laravel 5 #
+/vendor
+composer.lock
