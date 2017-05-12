@@ -1,26 +1,42 @@
 {
-  "name": "robsonvn/laravel-doctrine-couchdb",
-  "version" : "0.0.1",
-  "description": "A doctrine/couchdb Bundle for the Laravel 5",
+  "name": "robsonvn/laravel-couchdb",
+  "version" : "dev-master",
+  "description": "A CouchDB v2.0.0 based Eloquent model and Query builder for Laravel",
   "authors": [
     {
       "name": "Robson Nascimento",
       "email": "robsonvnasc@gmail.com"
     }
   ],
+  "license" : "MIT",
+  "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/robsonvn/couchdb-client"
+        }
+  ],
   "require": {
     "illuminate/database": "^5.2",
     "illuminate/support": "^5.2",
-    "doctrine/couchdb":"^1.0.0-beta4",
-    "doctrine/couchdb-odm": "v1.0.0-alpha3"
+    "illuminate/container": "^5.2",
+    "illuminate/events": "^5.2",
+    "doctrine/couchdb": "dev-master"
   },
   "require-dev":{
-    "phpunit/phpunit": "@stable"
+    "phpunit/phpunit": "@stable",
+    "orchestra/testbench": "^3.1",
+    "mockery/mockery": "^0.9"
   },
   "autoload": {
         "psr-4": {
             "Robsonvn\\CouchDB\\": "src"
         }
+   },
+   "autoload-dev": {
+       "classmap": [
+           "tests/TestCase.php",
+           "tests/models"
+       ]
    },
   "minimum-stability": "dev"
 }

@@ -5,18 +5,10 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class Builder extends EloquentBuilder
 {
-    public $model;
+    protected $model;
 
-    public function insert(array $values)
-    {
-        return parent::insert($values);
-    }
+    protected $query;
 
-
-    public function insertGetId(array $values)
-    {
-        return parent::insertGetId($values);
-    }
 
   /**
  * @inheritdoc
