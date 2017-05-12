@@ -155,6 +155,30 @@ class ModelTest extends TestCase
         $this->assertNotEquals($last_updated_at, $check->updated_at);
         $this->assertEquals(20, $check->age);
     }
+
+    public function testSelect(){
+
+      $user = new User;
+      $user->name = 'John Doe';
+      $user->title = 'admin';
+      $user->age = 35;
+      $user->save();
+
+      $user = new User;
+      $user->name = 'Jane Doe';
+      $user->title = 'admin';
+      $user->age = 35;
+      $user->save();
+
+      //$result = User::where('_id',$user->id)->get();
+
+      $result = User::where('name',$user->name)->get();
+
+      $result = User::where('title',$user->title)->get();
+
+    //  $result = User::where(['title',$user->title])->get();
+      print_r($result);
+    }
     /*
     public function testManualStringId()
     {
