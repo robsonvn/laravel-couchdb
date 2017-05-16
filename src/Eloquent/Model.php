@@ -2,29 +2,25 @@
 
 namespace Robsonvn\CouchDB\Eloquent;
 
-use Carbon\Carbon;
-use DateTime;
-use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Database\Eloquent\Builder as BaseBuilder;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model as BaseModel;
 use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
 
 abstract class Model extends BaseModel
 {
-
     use HybridRelations, EmbedsRelations;
     /**
-    * The collection associated with the model.
-    *
-    * @var string
-    */
+     * The collection associated with the model.
+     *
+     * @var string
+     */
     protected $collection;
 
     public $incrementing = true;
 
     /**
-    * Don't let the developer change these keys
-    */
+     * Don't let the developer change these keys.
+     */
     protected $primaryKey = '_id';
     private $revisionAttributeName = '_rev';
 
@@ -38,26 +34,27 @@ abstract class Model extends BaseModel
     protected $attributes_unset = [];
 
     /**
-    * @inheritdoc
-    */
-    public function __construct(array $attributes = []){
-      if($this->primaryKey!=='_id'){
-        throw new \Exception("CouchDB primary key must be _id", 1);
-      }
-      parent::__construct($attributes);
+     * {@inheritdoc}
+     */
+    public function __construct(array $attributes = [])
+    {
+        if ($this->primaryKey !== '_id') {
+            throw new \Exception('CouchDB primary key must be _id', 1);
+        }
+        parent::__construct($attributes);
     }
 
     /**
-    * @inheritdoc
-    */
+     * {@inheritdoc}
+     */
     public function newEloquentBuilder($query)
     {
         return new Builder($query);
     }
 
     /**
-    * @inheritdoc
-    */
+     * {@inheritdoc}
+     */
     protected function newBaseQueryBuilder()
     {
         $connection = $this->getConnection();
@@ -73,41 +70,43 @@ abstract class Model extends BaseModel
     public function getRevision()
     {
         $attr = $this->getRevisionAttributeName();
+
         return $this->$attr;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function setKeysForSaveQuery(BaseBuilder $query)
     {
         $query->where($this->getKeyName(), '=', $this->getKeyForSaveQuery());
         $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
+
         return $query;
     }
 
-
- /**
- * Custom accessor for the model's id.
- *
- * @param  mixed $value
- * @return mixed
- */
+  /**
+   * Custom accessor for the model's id.
+   *
+   * @param mixed $value
+   *
+   * @return mixed
+   */
   public function getIdAttribute($value = null)
   {
       // If we don't have a value for 'id', we will use the CouchDB '_id' value.
       // This allows us to work with models in a more sql-like way.
-      if (! $value and array_key_exists('_id', $this->attributes)) {
+      if (!$value and array_key_exists('_id', $this->attributes)) {
           $value = $this->attributes['_id'];
       }
 
       return $value;
   }
 
-      /**
+    /**
      * Set the parent relation.
      *
-     * @param  \Illuminate\Database\Eloquent\Relations\Relation $relation
+     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
      */
     public function setParentRelation(Relation $relation)
     {
@@ -125,15 +124,15 @@ abstract class Model extends BaseModel
     }
 
   /**
-   * @inheritdoc
-  */
+   * {@inheritdoc}
+   */
   public function getTable()
   {
       return $this->collection ?: parent::getTable();
   }
 
-   /**
-    * @inheritdoc
+  /**
+   * {@inheritdoc}
    */
   public function getQualifiedKeyName()
   {
@@ -141,10 +140,11 @@ abstract class Model extends BaseModel
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    * Perform a model update operation.
    *
-   * @param  \Illuminate\Database\Eloquent\Builder  $query
+   * @param \Illuminate\Database\Eloquent\Builder $query
+   *
    * @return bool
    */
   protected function performUpdate(BaseBuilder $query)
@@ -168,7 +168,6 @@ abstract class Model extends BaseModel
       // models are updated, giving them a chance to do any special processing.
       $attributes = $this->getAttributes();
 
-
       if ($this->isDirty()) {
           list($id, $rev) = $this->setKeysForSaveQuery($query)->update($attributes);
           $this->setAttribute($this->getRevisionAttributeName(), $rev);
@@ -179,10 +178,12 @@ abstract class Model extends BaseModel
 
       return true;
   }
+
   /**
    * Perform a model insert operation.
    *
-   * @param  \Illuminate\Database\Eloquent\Builder  $query
+   * @param \Illuminate\Database\Eloquent\Builder $query
+   *
    * @return bool
    */
   protected function performInsert(BaseBuilder $query)
@@ -199,8 +200,8 @@ abstract class Model extends BaseModel
       }
 
       //If model uses softDeletes, lets force the deleted column as null
-      if(method_exists($this,'getQualifiedDeletedAtColumn')){
-        $this->setAttribute($this->getQualifiedDeletedAtColumn(), null);
+      if (method_exists($this, 'getQualifiedDeletedAtColumn')) {
+          $this->setAttribute($this->getQualifiedDeletedAtColumn(), null);
       }
 
       // If the model has an incrementing key, we can use the "insertGetId" method on
@@ -208,7 +209,6 @@ abstract class Model extends BaseModel
       // table from the database. Not all tables have to be incrementing though.
       $attributes = $this->attributes;
       $keyName = $this->getKeyName();
-
 
       if ($this->getIncrementing() && !isset($attributes['id'])) {
           list($id, $rev) = $query->insertGetId($attributes, $keyName);
@@ -221,7 +221,7 @@ abstract class Model extends BaseModel
           if (empty($attributes)) {
               return true;
           }
-          list($id,$rev) = $query->insert($attributes);
+          list($id, $rev) = $query->insert($attributes);
       }
 
       $this->setAttribute($keyName, $id);
@@ -238,12 +238,13 @@ abstract class Model extends BaseModel
 
       return true;
   }
-  /**
- * @inheritdoc
+
+/**
+ * {@inheritdoc}
  */
 public function getAttribute($key)
 {
-    if (! $key) {
+    if (!$key) {
         return;
     }
 
@@ -253,23 +254,24 @@ public function getAttribute($key)
     }
 
     // This checks for embedded relation support.
-    if (method_exists($this, $key) and ! method_exists(self::class, $key)) {
+    if (method_exists($this, $key) and !method_exists(self::class, $key)) {
         return $this->getRelationValue($key);
     }
 
     return parent::getAttribute($key);
 }
 
-protected function unsetAttribute($key){
-  if (! $key) {
-      return;
-  }
-  array_set($this->attributes_unset, $key, true);
-  array_forget($this->attributes, $key);
-}
+    protected function unsetAttribute($key)
+    {
+        if (!$key) {
+            return;
+        }
+        array_set($this->attributes_unset, $key, true);
+        array_forget($this->attributes, $key);
+    }
 
 /**
- * @inheritdoc
+ * {@inheritdoc}
  */
 protected function getAttributeFromArray($key)
 {
@@ -281,10 +283,8 @@ protected function getAttributeFromArray($key)
     return parent::getAttributeFromArray($key);
 }
 
-
-
 /**
- * @inheritdoc
+ * {@inheritdoc}
  */
 public function setAttribute($key, $value)
 {
@@ -306,8 +306,9 @@ public function setAttribute($key, $value)
 
     parent::setAttribute($key, $value);
 }
+
 /**
- * @inheritdoc
+ * {@inheritdoc}
  */
 public function getCasts()
 {
@@ -315,13 +316,10 @@ public function getCasts()
 }
 
 /**
- * @inheritdoc
+ * {@inheritdoc}
  */
-
 public function attributesToArray()
 {
-
-
     $attributes = parent::attributesToArray();
 
     // Convert dot-notation dates.
@@ -333,34 +331,37 @@ public function attributesToArray()
 
     return $attributes;
 }
+
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   protected function removeTableFromKey($key)
   {
       return $key;
   }
+
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
-  public function isDirty($attributes = null){
-    return count($this->attributes_unset)>0 ? true : parent::isDirty($attributes);
+  public function isDirty($attributes = null)
+  {
+      return count($this->attributes_unset) > 0 ? true : parent::isDirty($attributes);
   }
 
-  public function unset($columns){
-    if(!$this->exists){
-      return;
+    public function unset($columns)
+    {
+        if (!$this->exists) {
+            return;
+        }
+
+        if (!is_array($columns)) {
+            $columns = [$columns];
+        }
+
+        foreach ($columns as $column) {
+            $this->unsetAttribute($column);
+        }
+
+        $return = $this->update($this->getAttributes());
     }
-
-    if(!is_array($columns)){
-      $columns = [$columns];
-    }
-
-    foreach($columns as $column){
-      $this->unsetAttribute($column);
-    }
-
-    $return = $this->update($this->getAttributes());
-
-  }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Robsonvn\CouchDB\View;
 
 class AllViewQuery
@@ -8,12 +9,14 @@ class AllViewQuery
         $this->collection = $collection;
         $this->query = $collection->createViewQuery('all')->setReduce(false);
     }
+
     public function execute()
     {
         try {
             return $this->query->execute();
         } catch (\Doctrine\CouchDB\HTTP\HTTPException $e) {
             $this->collection->createAllDesignDocument();
+
             return $this->query->execute();
         }
     }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Robsonvn\CouchDB\Query;
 
 use Illuminate\Database\Query\Builder as BaseBuilder;
@@ -103,70 +104,70 @@ public $operators = [
  * @var array
  */
 protected $conversion = [
-    '=' => '=',
+    '='  => '=',
     '!=' => '$ne',
     '<>' => '$ne',
-    '<' => '$lt',
+    '<'  => '$lt',
     '<=' => '$lte',
-    '>' => '$gt',
+    '>'  => '$gt',
     '>=' => '$gte',
 ];
 
 /**
- * Check if we need to return Collections instead of plain arrays (laravel >= 5.3 )
+ * Check if we need to return Collections instead of plain arrays (laravel >= 5.3 ).
  *
- * @var boolean
+ * @var bool
  */
 protected $useCollections;
 
     /**
-    * @inheritdoc
-    */
+     * {@inheritdoc}
+     */
     public function __construct(Connection $connection, Processor $processor)
     {
-        $this->grammar = new Grammar;
+        $this->grammar = new Grammar();
         $this->connection = $connection;
         $this->processor = $processor;
         $this->useCollections = true;
     }
+
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insert(array $values)
     {
-      // Since every insert gets treated like a batch insert, we will have to detect
+        // Since every insert gets treated like a batch insert, we will have to detect
       // if the user is inserting a single document or an array of documents.
       $batch = true;
 
         foreach ($values as $value) {
             // As soon as we find a value that is not an array we assume the user is
             // inserting a single document.
-            if (! is_array($value)) {
+            if (!is_array($value)) {
                 $batch = false;
                 break;
             }
         }
 
-        if($batch){
-          return $this->collection->insertMany($values);
-        }else{
-          return $this->collection->insertOne($values , $values['id']);
+        if ($batch) {
+            return $this->collection->insertMany($values);
+        } else {
+            return $this->collection->insertOne($values, $values['id']);
         }
 
         return $response;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insertGetId(array $values, $sequence = null)
     {
         return $this->collection->insertOne($values);
     }
 
-
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function count($columns = '*')
     {
@@ -176,10 +177,11 @@ protected $useCollections;
 
     public function newQuery()
     {
-        return new Builder($this->connection, $this->processor);
+        return new self($this->connection, $this->processor);
     }
+
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function update(array $values, array $options = [])
     {
@@ -195,8 +197,9 @@ protected $useCollections;
 
         return $this->collection->putDocument($values, $_id, $_rev);
     }
-     /**
-     * @inheritdoc
+
+    /**
+     * {@inheritdoc}
      */
     public function from($collection)
     {
@@ -208,8 +211,8 @@ protected $useCollections;
     }
 
     /**
-    * @inheritdoc
-    */
+     * {@inheritdoc}
+     */
     public function truncate()
     {
         //TODO: Create a filter to delete all instead select and delete
@@ -234,31 +237,31 @@ protected $useCollections;
         //TODO work with projections $this->projections
 
         $index = null;
-        $skip = ($this->offset) ? : 0;
-        $sort = ($this->orders) ? : [];
+        $skip = ($this->offset) ?: 0;
+        $sort = ($this->orders) ?: [];
 
         //Sorry about this, but CouchDB limit is 25 by default
-        $limit = ($this->limit) ? : 999999999;
+        $limit = ($this->limit) ?: 999999999;
 
+        $results = $this->collection->find($wheres, $columns, $sort, $limit, $skip, $index);
 
-        $results = $this->collection->find($wheres, $columns,$sort, $limit, $skip, $index);
-
-        if($results->status!=200){
-          //var_dump($results);
+        if ($results->status != 200) {
+            //var_dump($results);
           //exit;
           //TODO improve this exception
-          throw new \Exception("Query Error");
+          throw new \Exception('Query Error');
         }
 
         $results = $results->body['docs'];
 
-        $collections =  $this->useCollections ? new Collection($results) : $results;
+        $collections = $this->useCollections ? new Collection($results) : $results;
 
         return $collections;
     }
 
     /**
      * @param array $where
+     *
      * @return mixed
      */
     protected function compileWhereNested(array $where)
@@ -288,14 +291,14 @@ protected $useCollections;
 
                 // Operator conversions
                 $convert = [
-                    'regexp' => 'regex',
-                    'elemmatch' => 'elemMatch',
+                    'regexp'        => 'regex',
+                    'elemmatch'     => 'elemMatch',
                     'geointersects' => 'geoIntersects',
-                    'geowithin' => 'geoWithin',
-                    'nearsphere' => 'nearSphere',
-                    'maxdistance' => 'maxDistance',
-                    'centersphere' => 'centerSphere',
-                    'uniquedocs' => 'uniqueDocs',
+                    'geowithin'     => 'geoWithin',
+                    'nearsphere'    => 'nearSphere',
+                    'maxdistance'   => 'maxDistance',
+                    'centersphere'  => 'centerSphere',
+                    'uniquedocs'    => 'uniqueDocs',
                 ];
 
                 if (array_key_exists($where['operator'], $convert)) {
@@ -340,7 +343,6 @@ protected $useCollections;
                 $result = ['$and' => [$result]];
             }
 
-
             // Merge the compiled where with the others.
             $compiled = array_merge_recursive($compiled, $result);
         }
@@ -350,6 +352,7 @@ protected $useCollections;
 
     /**
      * @param array $where
+     *
      * @return array
      */
     protected function compileWhereBasic(array $where)
@@ -364,10 +367,10 @@ protected $useCollections;
             $regex = preg_replace('#(^|[^\\\])%#', '$1.*', preg_quote($value));
 
             // Convert like to regular expression.
-            if (! starts_with($value, '%')) {
+            if (!starts_with($value, '%')) {
                 $regex = '^'.$regex;
             }
-            if (! ends_with($value, '%')) {
+            if (!ends_with($value, '%')) {
                 $regex = $regex.'$';
             }
 
@@ -389,7 +392,7 @@ protected $useCollections;
             }
         }
 
-        if (! isset($operator) or $operator == '=') {
+        if (!isset($operator) or $operator == '=') {
             $query = [$column => $value];
         } elseif (array_key_exists($operator, $this->conversion)) {
             $query = [$column => [$this->conversion[$operator] => $value]];
@@ -400,16 +403,19 @@ protected $useCollections;
         return $query;
     }
 
-    /**
+/**
  * @param array $where
+ *
  * @return mixed
  */
 protected function compileWhereRaw(array $where)
 {
     return $where['sql'];
 }
-/**
+
+  /**
    * @param array $where
+   *
    * @return array
    */
   protected function compileWhereIn(array $where)
@@ -421,6 +427,7 @@ protected function compileWhereRaw(array $where)
 
   /**
    * @param array $where
+   *
    * @return array
    */
   protected function compileWhereNotIn(array $where)
@@ -432,6 +439,7 @@ protected function compileWhereRaw(array $where)
 
   /**
    * @param array $where
+   *
    * @return array
    */
   protected function compileWhereNull(array $where)
@@ -444,6 +452,7 @@ protected function compileWhereRaw(array $where)
 
   /**
    * @param array $where
+   *
    * @return array
    */
   protected function compileWhereNotNull(array $where)
@@ -456,6 +465,7 @@ protected function compileWhereRaw(array $where)
 
   /**
    * @param array $where
+   *
    * @return array
    */
   protected function compileWhereBetween(array $where)
@@ -486,15 +496,16 @@ protected function compileWhereRaw(array $where)
           ];
       }
   }
-    /**
-   * @inheritdoc
+
+  /**
+   * {@inheritdoc}
    */
   public function delete($id = null)
   {
       // If an ID is passed to the method, we will set the where clause to check
       // the ID to allow developers to simply and quickly remove a single row
       // from their database without manually specifying the where clauses.
-      if (! is_null($id)) {
+      if (!is_null($id)) {
           $this->where('_id', '=', $id);
       }
 
@@ -502,5 +513,4 @@ protected function compileWhereRaw(array $where)
 
       return $this->collection->DeleteMany($wheres);
   }
-
 }

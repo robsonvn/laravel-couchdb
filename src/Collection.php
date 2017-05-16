@@ -1,8 +1,6 @@
 <?php
-namespace Robsonvn\CouchDB;
 
-use Robsonvn\CouchDB\View\AbstractDesignDocument;
-use Robsonvn\CouchDB\View\AllViewQuery;
+namespace Robsonvn\CouchDB;
 
 class Collection
 {
@@ -11,8 +9,8 @@ class Collection
     protected $collection;
 
   /**
-   * @param Connection      $connection
-   * @param string $collection
+   * @param Connection $connection
+   * @param string     $collection
    */
   public function __construct(Connection $connection, string $collection)
   {
@@ -37,7 +35,7 @@ class Collection
 
         $where['doc_collection'] = $this->collection;
 
-        $result = $client->find($where, ['_id','_rev']);
+        $result = $client->find($where, ['_id', '_rev']);
 
         if ($result->status == 200) {
             $bulkUpdater = $client->createBulkUpdater();
@@ -47,7 +45,7 @@ class Collection
             }
             $result = $bulkUpdater->execute();
 
-            if ($result->status==201) {
+            if ($result->status == 201) {
                 $deleted = count($result->body);
             }
         }
@@ -58,7 +56,7 @@ class Collection
     public function insertMany($values)
     {
         //Force doc_collection
-        foreach($values as &$value){
+        foreach ($values as &$value) {
             $value['doc_collection'] = $this->collection;
         }
 
@@ -68,17 +66,16 @@ class Collection
         $response = $bulkUpdater->execute();
 
         return $response->body;
-
     }
 
-    public function insertOne($values, $id = null){
+    public function insertOne($values, $id = null)
+    {
+        if ($id) {
+            $response = $this->putDocument($values, $id);
+        } else {
+            $response = $this->postDocument($values);
+        }
 
-      if($id){
-        $response = $this->putDocument($values, $id);
-      }else{
-        $response = $this->postDocument($values);
-      }
-
-      return $response;
+        return $response;
     }
 }

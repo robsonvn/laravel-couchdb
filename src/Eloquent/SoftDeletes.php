@@ -1,11 +1,13 @@
-<?php namespace Robsonvn\CouchDB\Eloquent;
+<?php
+
+namespace Robsonvn\CouchDB\Eloquent;
 
 trait SoftDeletes
 {
     use \Illuminate\Database\Eloquent\SoftDeletes;
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getQualifiedDeletedAtColumn()
     {
@@ -13,7 +15,7 @@ trait SoftDeletes
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function runSoftDelete()
     {
@@ -24,9 +26,8 @@ trait SoftDeletes
         $query->update($this->getAttributes());
     }
 
-
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function restore()
     {

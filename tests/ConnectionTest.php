@@ -37,11 +37,13 @@ class ConnectionTest extends TestCase
         $collection = DB::connection('couchdb')->table('unittests');
         $this->assertInstanceOf('Robsonvn\CouchDB\Query\Builder', $collection);*/
     }
+
     public function testDriverName()
     {
         $driver = DB::connection('couchdb')->getDriverName();
         $this->assertEquals('couchdb', $driver);
     }
+
 /*
     // public function testDynamic()
     // {
