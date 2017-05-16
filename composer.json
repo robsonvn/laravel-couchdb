@@ -16,10 +16,10 @@
         }
   ],
   "require": {
-    "illuminate/database": "^5.2",
-    "illuminate/support": "^5.2",
-    "illuminate/container": "^5.2",
-    "illuminate/events": "^5.2",
+    "illuminate/database": "5.4.19",
+    "illuminate/support": "5.4.19",
+    "illuminate/container": "5.4.19",
+    "illuminate/events": "5.4.19",
     "doctrine/couchdb": "dev-master"
   },
   "require-dev":{

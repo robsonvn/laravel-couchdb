@@ -2,14 +2,17 @@
 
 namespace Robsonvn\CouchDB\Eloquent;
 
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Database\Eloquent\Builder as BaseBuilder;
-
+use Illuminate\Support\Str;
 use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
 
 abstract class Model extends BaseModel
 {
 
+    use HybridRelations, EmbedsRelations;
     /**
     * The collection associated with the model.
     *
@@ -22,7 +25,12 @@ abstract class Model extends BaseModel
     protected $primaryKey = '_id';
     protected $revisionAttributeName = '_rev';
 
-    protected $views = array();
+    /**
+     * The parent relation instance.
+     *
+     * @var Relation
+     */
+    protected $parentRelation;
 
     /**
     * @inheritdoc
@@ -81,6 +89,26 @@ abstract class Model extends BaseModel
       return $value;
   }
 
+      /**
+     * Set the parent relation.
+     *
+     * @param  \Illuminate\Database\Eloquent\Relations\Relation $relation
+     */
+    public function setParentRelation(Relation $relation)
+    {
+        $this->parentRelation = $relation;
+    }
+
+    /**
+     * Get the parent relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function getParentRelation()
+    {
+        return $this->parentRelation;
+    }
+
   /**
    * @inheritdoc
   */
@@ -124,6 +152,7 @@ abstract class Model extends BaseModel
       // this model instance. This will allow developers to hook into these after
       // models are updated, giving them a chance to do any special processing.
       $attributes = $this->getAttributes();
+
       $dirty = $this->getDirty();
 
       if (count($dirty) > 0) {
@@ -154,11 +183,17 @@ abstract class Model extends BaseModel
           $this->updateTimestamps();
       }
 
+      //If model uses softDeletes, lets force the deleted column as null
+      if(method_exists($this,'getQualifiedDeletedAtColumn')){
+        $this->setAttribute($this->getQualifiedDeletedAtColumn(), null);
+      }
+
       // If the model has an incrementing key, we can use the "insertGetId" method on
       // the query builder, which will give us back the final inserted ID for this
       // table from the database. Not all tables have to be incrementing though.
       $attributes = $this->attributes;
       $keyName = $this->getKeyName();
+
 
       if ($this->getIncrementing() && !isset($attributes['id'])) {
           list($id, $rev) = $query->insertGetId($attributes, $keyName);
@@ -171,13 +206,14 @@ abstract class Model extends BaseModel
           if (empty($attributes)) {
               return true;
           }
-
-          list($id, $rev) = $query->insert($attributes);
+          list($id,$rev) = $query->insert($attributes);
       }
 
 
       $this->setAttribute($keyName, $id);
       $this->setAttribute($this->getRevisionAttributeName(), $rev);
+
+
 
       // We will go ahead and set the exists property to true, so that it is set when
       // the created event is fired, just in case the developer tries to update it
@@ -189,5 +225,105 @@ abstract class Model extends BaseModel
       $this->fireModelEvent('created', false);
 
       return true;
+  }
+  /**
+ * @inheritdoc
+ */
+public function getAttribute($key)
+{
+    if (! $key) {
+        return;
+    }
+
+    // Dot notation support.
+    if (str_contains($key, '.') and array_has($this->attributes, $key)) {
+        return $this->getAttributeValue($key);
+    }
+
+    // This checks for embedded relation support.
+    if (method_exists($this, $key) and ! method_exists(self::class, $key)) {
+        return $this->getRelationValue($key);
+    }
+
+    return parent::getAttribute($key);
+}
+
+protected function unsetAttribute($key){
+  if (! $key) {
+      return;
+  }
+  array_forget($this->attributes, $key);
+}
+
+/**
+ * @inheritdoc
+ */
+protected function getAttributeFromArray($key)
+{
+    // Support keys in dot notation.
+    if (str_contains($key, '.')) {
+        return array_get($this->attributes, $key);
+    }
+
+    return parent::getAttributeFromArray($key);
+}
+
+
+/**
+ * @inheritdoc
+ */
+public function setAttribute($key, $value)
+{
+    // Convert _id to ObjectID.
+    if ($key == '_id' and is_string($value)) {
+        $builder = $this->newBaseQueryBuilder();
+
+        $value = $value;
+    } // Support keys in dot notation.
+    elseif (str_contains($key, '.')) {
+        if (in_array($key, $this->getDates()) && $value) {
+            $value = $this->fromDateTime($value);
+        }
+
+        array_set($this->attributes, $key, $value);
+
+        return;
+    }
+
+    parent::setAttribute($key, $value);
+}
+
+/**
+ * @inheritdoc
+ */
+public function attributesToArray()
+{
+    $attributes = parent::attributesToArray();
+
+    // Because the original Eloquent never returns objects, we convert
+    // MongoDB related objects to a string representation. This kind
+    // of mimics the SQL behaviour so that dates are formatted
+    // nicely when your models are converted to JSON.
+    foreach ($attributes as $key => &$value) {
+        if ($value instanceof ObjectID) {
+            $value = (string) $value;
+        }
+    }
+
+    // Convert dot-notation dates.
+    foreach ($this->getDates() as $key) {
+        if (str_contains($key, '.') and array_has($attributes, $key)) {
+            array_set($attributes, $key, (string) $this->asDateTime(array_get($attributes, $key)));
+        }
+    }
+
+    return $attributes;
+}
+  /**
+   * @inheritdoc
+   */
+  protected function removeTableFromKey($key)
+  {
+      return $key;
   }
 }

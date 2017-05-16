@@ -23,37 +23,62 @@ class Collection
     public function __call($method, $parameters)
     {
         $parameters[0]['type'] = $this->collection;
+
+        //echo "\n $method \n ".json_encode($parameters);
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
+
         return $result;
     }
-/*
-    public function checkIfExists()
+
+    public function deleteMany($where)
     {
+        $deleted = 0;
         $client = $this->connection->getCouchDBClient();
 
-        $response = $client->findDocument("_design/{$this->collection}");
+        $where['type'] = $this->collection;
 
-        return $response->status == 200;
+        $result = $client->find($where, ['_id','_rev']);
+
+        if ($result->status == 200) {
+            $bulkUpdater = $client->createBulkUpdater();
+
+            foreach ($result->body['docs'] as $doc) {
+                $bulkUpdater->deleteDocument($doc['_id'], $doc['_rev']);
+            }
+            $result = $bulkUpdater->execute();
+
+            if ($result->status==201) {
+                $deleted = count($result->body);
+            }
+        }
+
+        return $deleted;
     }
 
-
-    public function createViewQuery($view_name)
+    public function insertMany($values)
     {
-        return $this->connection->getCouchDBClient()->createViewQuery($this->collection, $view_name);
-    }
+        //Force type
+        foreach($values as &$value){
+            $value['type'] = $this->collection;
+        }
 
-    public function createViewAllQuery()
-    {
-        return new AllViewQuery($this);
-    }
-
-    public function createAllDesignDocument()
-    {
         $client = $this->connection->getCouchDBClient();
-        return $client->createDesignDocument($this->collection, new AbstractDesignDocument($this->collection));
-    }*/
+        $bulkUpdater = $client->createBulkUpdater();
+        $bulkUpdater->updateDocuments($values);
+        $response = $bulkUpdater->execute();
 
-    public function drop()
-    {
+        return $response->body;
+
+    }
+
+    public function insertOne($values, $id = null){
+
+      if($id){
+        $response = $this->putDocument($values, $id);
+      }else{
+        $response = $this->postDocument($values);
+      }
+
+      return $response;
     }
 }

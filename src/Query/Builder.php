@@ -7,7 +7,117 @@ use Robsonvn\CouchDB\Connection;
 
 class Builder extends BaseBuilder
 {
-    protected $collection;
+    /**
+ * The database collection.
+ *
+ * @var MongoCollection
+ */
+protected $collection;
+
+/**
+ * The column projections.
+ *
+ * @var array
+ */
+public $projections;
+
+/**
+ * The cursor timeout value.
+ *
+ * @var int
+ */
+public $timeout;
+
+/**
+ * The cursor hint value.
+ *
+ * @var int
+ */
+public $hint;
+
+/**
+ * Custom options to add to the query.
+ *
+ * @var array
+ */
+public $options = [];
+
+/**
+ * Indicate if we are executing a pagination query.
+ *
+ * @var bool
+ */
+public $paginating = false;
+
+/**
+ * All of the available clause operators.
+ *
+ * @var array
+ */
+public $operators = [
+    '=',
+    '<',
+    '>',
+    '<=',
+    '>=',
+    '<>',
+    '!=',
+    'like',
+    'not like',
+    'between',
+    'ilike',
+    '&',
+    '|',
+    '^',
+    '<<',
+    '>>',
+    'rlike',
+    'regexp',
+    'not regexp',
+    'exists',
+    'type',
+    'mod',
+    'where',
+    'all',
+    'size',
+    'regex',
+    'text',
+    'slice',
+    'elemmatch',
+    'geowithin',
+    'geointersects',
+    'near',
+    'nearsphere',
+    'geometry',
+    'maxdistance',
+    'center',
+    'centersphere',
+    'box',
+    'polygon',
+    'uniquedocs',
+];
+
+/**
+ * Operator conversion.
+ *
+ * @var array
+ */
+protected $conversion = [
+    '=' => '=',
+    '!=' => '$ne',
+    '<>' => '$ne',
+    '<' => '$lt',
+    '<=' => '$lte',
+    '>' => '$gt',
+    '>=' => '$gte',
+];
+
+/**
+ * Check if we need to return Collections instead of plain arrays (laravel >= 5.3 )
+ *
+ * @var boolean
+ */
+protected $useCollections;
 
     /**
     * @inheritdoc
@@ -24,14 +134,34 @@ class Builder extends BaseBuilder
      */
     public function insert(array $values)
     {
-        return $this->collection->putDocument($values,$values['id']);
+      // Since every insert gets treated like a batch insert, we will have to detect
+      // if the user is inserting a single document or an array of documents.
+      $batch = true;
+
+        foreach ($values as $value) {
+            // As soon as we find a value that is not an array we assume the user is
+            // inserting a single document.
+            if (! is_array($value)) {
+                $batch = false;
+                break;
+            }
+        }
+
+        if($batch){
+          return $this->collection->insertMany($values);
+        }else{
+          return $this->collection->insertOne($values , $values['id']);
+        }
+
+        return $response;
     }
+
     /**
      * @inheritdoc
      */
     public function insertGetId(array $values, $sequence = null)
     {
-        return $this->collection->postDocument($values);
+        return $this->collection->insertOne($values);
     }
 
 
@@ -42,7 +172,6 @@ class Builder extends BaseBuilder
     {
         //TODO: add support to aggregate function
       return $this->get()->count();
-
     }
 
     public function newQuery()
@@ -59,7 +188,6 @@ class Builder extends BaseBuilder
 
     protected function performUpdate($values, array $options = [])
     {
-
         foreach ($this->wheres as $where) {
             $column = $where['column'];
             $$column = $where['value'];
@@ -97,11 +225,31 @@ class Builder extends BaseBuilder
         return $response->status == 201;
     }
 
-    public function get($columns = ['*'])
+    public function get($columns = [])
     {
+        $columns = (['*'] == $columns) ? [] : $columns;
+
         $wheres = $this->compileWheres();
 
-        $results = $this->collection->find($wheres);
+        //TODO work with projections $this->projections
+
+        $index = null;
+        $skip = ($this->offset) ? : 0;
+        $sort = ($this->orders) ? : [];
+
+        //Sorry about this, but CouchDB limit is 25 by default
+        $limit = ($this->limit) ? : 999999999;
+
+
+        $results = $this->collection->find($wheres, $columns,$sort, $limit, $skip, $index);
+
+        if($results->status!=200){
+          //var_dump($results);
+          //exit;
+          //TODO improve this exception
+          throw new \Exception("Query Error");
+        }
+
         $results = $results->body['docs'];
 
         $collections =  $this->useCollections ? new Collection($results) : $results;
@@ -109,7 +257,16 @@ class Builder extends BaseBuilder
         return $collections;
     }
 
+    /**
+     * @param array $where
+     * @return mixed
+     */
+    protected function compileWhereNested(array $where)
+    {
+        extract($where);
 
+        return $query->compileWheres();
+    }
 
     /**
      * Compile the where array.
@@ -145,19 +302,6 @@ class Builder extends BaseBuilder
                     $where['operator'] = $convert[$where['operator']];
                 }
             }
-
-            // Convert id's.
-          /*  if (isset($where['column']) and ($where['column'] == '_id' or ends_with($where['column'], '._id'))) {
-                // Multiple values.
-                if (isset($where['values'])) {
-                    foreach ($where['values'] as &$value) {
-                        $value = $this->convertKey($value);
-                    }
-                } // Single value.
-                elseif (isset($where['value'])) {
-                    $where['value'] = $this->convertKey($where['value']);
-                }
-            }*/
 
             // Convert DateTime values to UTCDateTime.
             if (isset($where['value'])) {
@@ -201,8 +345,6 @@ class Builder extends BaseBuilder
             $compiled = array_merge_recursive($compiled, $result);
         }
 
-
-        //exit;
         return $compiled;
     }
 
@@ -229,16 +371,16 @@ class Builder extends BaseBuilder
                 $regex = $regex.'$';
             }
 
-            $value = new Regex($regex, 'i');
+            $value = $regex;
         } // Manipulate regexp operations.
         elseif (in_array($operator, ['regexp', 'not regexp', 'regex', 'not regex'])) {
             // Automatically convert regular expression strings to Regex objects.
-            if (! $value instanceof Regex) {
+            /*if (! $value instanceof Regex) {
                 $e = explode('/', $value);
                 $flag = end($e);
                 $regstr = substr($value, 1, -(strlen($flag) + 1));
                 $value = new Regex($regstr, $flag);
-            }
+            }*/
 
             // For inverse regexp operations, we can just use the $not operator
             // and pass it a Regex instence.
@@ -257,4 +399,107 @@ class Builder extends BaseBuilder
 
         return $query;
     }
+
+    /**
+ * @param array $where
+ * @return mixed
+ */
+protected function compileWhereRaw(array $where)
+{
+    return $where['sql'];
+}
+/**
+   * @param array $where
+   * @return array
+   */
+  protected function compileWhereIn(array $where)
+  {
+      extract($where);
+
+      return [$column => ['$in' => array_values($values)]];
+  }
+
+  /**
+   * @param array $where
+   * @return array
+   */
+  protected function compileWhereNotIn(array $where)
+  {
+      extract($where);
+
+      return [$column => ['$nin' => array_values($values)]];
+  }
+
+  /**
+   * @param array $where
+   * @return array
+   */
+  protected function compileWhereNull(array $where)
+  {
+      $where['operator'] = '=';
+      $where['value'] = null;
+
+      return $this->compileWhereBasic($where);
+  }
+
+  /**
+   * @param array $where
+   * @return array
+   */
+  protected function compileWhereNotNull(array $where)
+  {
+      $where['operator'] = '!=';
+      $where['value'] = null;
+
+      return $this->compileWhereBasic($where);
+  }
+
+  /**
+   * @param array $where
+   * @return array
+   */
+  protected function compileWhereBetween(array $where)
+  {
+      extract($where);
+
+      if ($not) {
+          return [
+              '$or' => [
+                  [
+                      $column => [
+                          '$lte' => $values[0],
+                      ],
+                  ],
+                  [
+                      $column => [
+                          '$gte' => $values[1],
+                      ],
+                  ],
+              ],
+          ];
+      } else {
+          return [
+              $column => [
+                  '$gte' => $values[0],
+                  '$lte' => $values[1],
+              ],
+          ];
+      }
+  }
+  /**
+ * @inheritdoc
+ */
+public function delete($id = null)
+{
+    // If an ID is passed to the method, we will set the where clause to check
+    // the ID to allow developers to simply and quickly remove a single row
+    // from their database without manually specifying the where clauses.
+    if (! is_null($id)) {
+        $this->where('_id', '=', $id);
+    }
+
+    $wheres = $this->compileWheres();
+
+    return $this->collection->DeleteMany($wheres);
+}
 }
