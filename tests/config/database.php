@@ -6,10 +6,10 @@ return [
 
         'couchdb' => [
             'name'       => 'couchdb',
-            'type'     => 'socket',
+            'type'       => 'socket',
             'driver'     => 'couchdb',
             'host'       => '127.0.0.1',
-            'dbname'   => 'unittest',
+            'dbname'     => 'unittest',
         ],
 
         'mysql' => [

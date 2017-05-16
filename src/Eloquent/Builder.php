@@ -1,4 +1,5 @@
 <?php
+
 namespace Robsonvn\CouchDB\Eloquent;
 
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -9,9 +10,8 @@ class Builder extends EloquentBuilder
 
     protected $query;
 
-
-    /**
-   * @inheritdoc
+  /**
+   * {@inheritdoc}
    */
   public function update(array $values, array $options = [])
   {
@@ -22,10 +22,12 @@ class Builder extends EloquentBuilder
 
             return 1;
         }
+
       return $this->query->update($this->addUpdatedAtColumn($values), $options);
   }
-    /**
-   * @inheritdoc
+
+  /**
+   * {@inheritdoc}
    */
   public function insert(array $values)
   {
@@ -41,7 +43,7 @@ class Builder extends EloquentBuilder
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function insertGetId(array $values, $sequence = null)
   {
@@ -57,7 +59,7 @@ class Builder extends EloquentBuilder
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function delete()
   {
@@ -71,5 +73,4 @@ class Builder extends EloquentBuilder
 
       return parent::delete();
   }
-
 }

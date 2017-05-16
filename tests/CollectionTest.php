@@ -1,7 +1,7 @@
 <?php
-use Robsonvn\CouchDB\Connection;
-use Robsonvn\CouchDB\Collection;
 
+use Robsonvn\CouchDB\Collection;
+use Robsonvn\CouchDB\Connection;
 
 class CollectionTest extends TestCase
 {
@@ -30,25 +30,26 @@ class CollectionTest extends TestCase
     }*/
 
     /**
-    * @expectedException Exception
-    *
-    */
-    public function testExecuteUnknownView(){
-      $connection = DB::connection('couchdb');
+     * @expectedException Exception
+     */
+    public function testExecuteUnknownView()
+    {
+        $connection = DB::connection('couchdb');
 
-      $collection = new Collection($connection, 'unit-test-collection');
+        $collection = new Collection($connection, 'unit-test-collection');
 
-      $this->assertInstanceOf('Robsonvn\CouchDB\Collection',$collection);
-      $query  = $collection->createViewQuery('all');
+        $this->assertInstanceOf('Robsonvn\CouchDB\Collection', $collection);
+        $query = $collection->createViewQuery('all');
 
-      $this->assertInstanceOf('Doctrine\CouchDB\View\Query',$query);
+        $this->assertInstanceOf('Doctrine\CouchDB\View\Query', $query);
 
       //Doctrine\CouchDB\HTTP\HTTPException
       $result = $query->execute();
     }
 
-    public function testExecuteView(){
-      /*$connection = DB::connection('couchdb');
+    public function testExecuteView()
+    {
+        /*$connection = DB::connection('couchdb');
 
       $collection = new Collection($connection, 'articles');
 

@@ -1,4 +1,5 @@
 <?php
+
 namespace Robsonvn\CouchDB;
 
 use Illuminate\Support\ServiceProvider as IlluminateServiceProvider;

@@ -1,11 +1,13 @@
-<?php namespace Robsonvn\CouchDB\Relations;
+<?php
+
+namespace Robsonvn\CouchDB\Relations;
 
 use Illuminate\Database\Eloquent\Relations\MorphTo as EloquentMorphTo;
 
 class MorphTo extends EloquentMorphTo
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addConstraints()
     {
@@ -18,7 +20,7 @@ class MorphTo extends EloquentMorphTo
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getResultsByType($type)
     {

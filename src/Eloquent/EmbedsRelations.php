@@ -1,4 +1,6 @@
-<?php namespace Robsonvn\CouchDB\Eloquent;
+<?php
+
+namespace Robsonvn\CouchDB\Eloquent;
 
 use Robsonvn\CouchDB\Relations\EmbedsMany;
 use Robsonvn\CouchDB\Relations\EmbedsOne;
@@ -8,10 +10,11 @@ trait EmbedsRelations
     /**
      * Define an embedded one-to-many relationship.
      *
-     * @param  string $related
-     * @param  string $localKey
-     * @param  string $foreignKey
-     * @param  string $relation
+     * @param string $related
+     * @param string $localKey
+     * @param string $foreignKey
+     * @param string $relation
+     *
      * @return \Robsonvn\CouchDB\Relations\EmbedsMany
      */
     protected function embedsMany($related, $localKey = null, $foreignKey = null, $relation = null)
@@ -35,7 +38,7 @@ trait EmbedsRelations
 
         $query = $this->newQuery();
 
-        $instance = new $related;
+        $instance = new $related();
 
         return new EmbedsMany($query, $this, $instance, $localKey, $foreignKey, $relation);
     }
@@ -43,10 +46,11 @@ trait EmbedsRelations
     /**
      * Define an embedded one-to-many relationship.
      *
-     * @param  string $related
-     * @param  string $localKey
-     * @param  string $foreignKey
-     * @param  string $relation
+     * @param string $related
+     * @param string $localKey
+     * @param string $foreignKey
+     * @param string $relation
+     *
      * @return \Robsonvn\CouchDB\Relations\EmbedsOne
      */
     protected function embedsOne($related, $localKey = null, $foreignKey = null, $relation = null)
@@ -70,7 +74,7 @@ trait EmbedsRelations
 
         $query = $this->newQuery();
 
-        $instance = new $related;
+        $instance = new $related();
 
         return new EmbedsOne($query, $this, $instance, $localKey, $foreignKey, $relation);
     }

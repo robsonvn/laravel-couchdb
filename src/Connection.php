@@ -13,6 +13,7 @@ class Connection extends BaseConnection
      * @var resource
      */
     protected $db;
+
     /**
      * Create a new database connection instance.
      *
@@ -25,6 +26,7 @@ class Connection extends BaseConnection
         $this->useDefaultPostProcessor();
         $this->useDefaultQueryGrammar();
     }
+
     /**
      * Get the CouchDB database object.
      *
@@ -34,30 +36,33 @@ class Connection extends BaseConnection
     {
         return $this->db;
     }
+
     /**
-     *
      * @return string
      */
     public function getDriverName()
     {
         return 'couchdb';
     }
+
     /**
      * Dynamically pass methods to the connection.
      *
-     * @param  string  $method
-     * @param  array   $parameters
+     * @param string $method
+     * @param array  $parameters
+     *
      * @return mixed
      */
     public function __call($method, $parameters)
     {
-        return call_user_func_array(array($this->db, $method), $parameters);
+        return call_user_func_array([$this->db, $method], $parameters);
     }
 
     /**
      * Begin a fluent query against a database collection.
      *
-     * @param  string $collection
+     * @param string $collection
+     *
      * @return Query\Builder
      */
     public function collection($collection)
@@ -76,6 +81,7 @@ class Connection extends BaseConnection
     {
         return new Query\Grammar();
     }
+
     protected function getDefaultSchemaGrammar()
     {
         return new Schema\Grammar();
