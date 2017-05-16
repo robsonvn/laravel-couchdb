@@ -10,7 +10,7 @@ class ModelTest extends TestCase
     {
         User::truncate();
         Soft::truncate();
-        Book::truncate();
+      //  Book::truncate();
         Item::truncate();
     }
 
@@ -340,29 +340,8 @@ class ModelTest extends TestCase
 
         $user->restore();
         $all = Soft::withTrashed()->get();
-        print_r($all);
 
         $this->assertEquals(2, Soft::count());
-    }
-       /*
-    public function testPrimaryKey()
-    {
-        $user = new User;
-        $this->assertEquals('_id', $user->getKeyName());
-
-        $book = new Book;
-        $this->assertEquals('title', $book->getKeyName());
-
-        $book->title = 'A Game of Thrones';
-        $book->author = 'George R. R. Martin';
-        $book->save();
-
-        $this->assertEquals('A Game of Thrones', $book->getKey());
-
-        $check = Book::find('A Game of Thrones');
-        $this->assertEquals('title', $check->getKeyName());
-        $this->assertEquals('A Game of Thrones', $check->getKey());
-        $this->assertEquals('A Game of Thrones', $check->title);
     }
 
     public function testScope()
@@ -376,17 +355,21 @@ class ModelTest extends TestCase
         $this->assertEquals(1, $sharp->count());
     }
 
+
     public function testToArray()
     {
         $item = Item::create(['name' => 'fork', 'type' => 'sharp']);
 
         $array = $item->toArray();
+
         $keys = array_keys($array);
         sort($keys);
-        $this->assertEquals(['_id', 'created_at', 'name', 'type', 'updated_at'], $keys);
+
+        $this->assertEquals(['_id', '_rev', 'created_at', 'name', 'type', 'updated_at'], $keys);
         $this->assertTrue(is_string($array['created_at']));
         $this->assertTrue(is_string($array['updated_at']));
         $this->assertTrue(is_string($array['_id']));
+        $this->assertTrue(is_string($array['_rev']));
     }
 
     public function testUnset()
@@ -427,6 +410,8 @@ class ModelTest extends TestCase
         $this->assertEquals($user->birthday, $check->birthday);
 
         $user = User::where('birthday', '>', new DateTime('1975/1/1'))->first();
+
+        //exit;    
         $this->assertEquals('John Doe', $user->name);
 
         // test custom date format for json output
@@ -466,7 +451,7 @@ class ModelTest extends TestCase
         $this->assertNotInstanceOf(UTCDateTime::class, $data['entry']['date']);
         $this->assertEquals((string) $user->getAttribute('entry.date')->format('Y-m-d H:i:s'), $data['entry']['date']);
     }
-
+/*
     public function testIdAttribute()
     {
         $user = User::create(['name' => 'John Doe']);

@@ -486,20 +486,21 @@ protected function compileWhereRaw(array $where)
           ];
       }
   }
-  /**
- * @inheritdoc
- */
-public function delete($id = null)
-{
-    // If an ID is passed to the method, we will set the where clause to check
-    // the ID to allow developers to simply and quickly remove a single row
-    // from their database without manually specifying the where clauses.
-    if (! is_null($id)) {
-        $this->where('_id', '=', $id);
-    }
+    /**
+   * @inheritdoc
+   */
+  public function delete($id = null)
+  {
+      // If an ID is passed to the method, we will set the where clause to check
+      // the ID to allow developers to simply and quickly remove a single row
+      // from their database without manually specifying the where clauses.
+      if (! is_null($id)) {
+          $this->where('_id', '=', $id);
+      }
 
-    $wheres = $this->compileWheres();
+      $wheres = $this->compileWheres();
 
-    return $this->collection->DeleteMany($wheres);
-}
+      return $this->collection->DeleteMany($wheres);
+  }
+
 }

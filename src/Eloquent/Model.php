@@ -22,8 +22,11 @@ abstract class Model extends BaseModel
 
     public $incrementing = true;
 
+    /**
+    * Don't let the developer change these keys
+    */
     protected $primaryKey = '_id';
-    protected $revisionAttributeName = '_rev';
+    private $revisionAttributeName = '_rev';
 
     /**
      * The parent relation instance.
@@ -31,6 +34,18 @@ abstract class Model extends BaseModel
      * @var Relation
      */
     protected $parentRelation;
+
+    protected $attributes_unset = [];
+
+    /**
+    * @inheritdoc
+    */
+    public function __construct(array $attributes = []){
+      if($this->primaryKey!=='_id'){
+        throw new \Exception("CouchDB primary key must be _id", 1);
+      }
+      parent::__construct($attributes);
+    }
 
     /**
     * @inheritdoc
@@ -153,11 +168,11 @@ abstract class Model extends BaseModel
       // models are updated, giving them a chance to do any special processing.
       $attributes = $this->getAttributes();
 
-      $dirty = $this->getDirty();
 
-      if (count($dirty) > 0) {
+      if ($this->isDirty()) {
           list($id, $rev) = $this->setKeysForSaveQuery($query)->update($attributes);
           $this->setAttribute($this->getRevisionAttributeName(), $rev);
+          $this->attributes_unset = [];
 
           $this->fireModelEvent('updated', false);
       }
@@ -209,11 +224,8 @@ abstract class Model extends BaseModel
           list($id,$rev) = $query->insert($attributes);
       }
 
-
       $this->setAttribute($keyName, $id);
       $this->setAttribute($this->getRevisionAttributeName(), $rev);
-
-
 
       // We will go ahead and set the exists property to true, so that it is set when
       // the created event is fired, just in case the developer tries to update it
@@ -252,6 +264,7 @@ protected function unsetAttribute($key){
   if (! $key) {
       return;
   }
+  array_set($this->attributes_unset, $key, true);
   array_forget($this->attributes, $key);
 }
 
@@ -267,6 +280,7 @@ protected function getAttributeFromArray($key)
 
     return parent::getAttributeFromArray($key);
 }
+
 
 
 /**
@@ -292,23 +306,23 @@ public function setAttribute($key, $value)
 
     parent::setAttribute($key, $value);
 }
+/**
+ * @inheritdoc
+ */
+public function getCasts()
+{
+    return $this->casts;
+}
 
 /**
  * @inheritdoc
  */
+
 public function attributesToArray()
 {
-    $attributes = parent::attributesToArray();
 
-    // Because the original Eloquent never returns objects, we convert
-    // MongoDB related objects to a string representation. This kind
-    // of mimics the SQL behaviour so that dates are formatted
-    // nicely when your models are converted to JSON.
-    foreach ($attributes as $key => &$value) {
-        if ($value instanceof ObjectID) {
-            $value = (string) $value;
-        }
-    }
+
+    $attributes = parent::attributesToArray();
 
     // Convert dot-notation dates.
     foreach ($this->getDates() as $key) {
@@ -325,5 +339,28 @@ public function attributesToArray()
   protected function removeTableFromKey($key)
   {
       return $key;
+  }
+  /**
+   * @inheritdoc
+   */
+  public function isDirty($attributes = null){
+    return count($this->attributes_unset)>0 ? true : parent::isDirty($attributes);
+  }
+
+  public function unset($columns){
+    if(!$this->exists){
+      return;
+    }
+
+    if(!is_array($columns)){
+      $columns = [$columns];
+    }
+
+    foreach($columns as $column){
+      $this->unsetAttribute($column);
+    }
+
+    $return = $this->update($this->getAttributes());
+
   }
 }

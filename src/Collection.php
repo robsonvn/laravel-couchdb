@@ -22,9 +22,9 @@ class Collection
 
     public function __call($method, $parameters)
     {
-        $parameters[0]['type'] = $this->collection;
+        $parameters[0]['doc_collection'] = $this->collection;
 
-        //echo "\n $method \n ".json_encode($parameters);
+        echo "\n $method \n ".json_encode($parameters);
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
         return $result;
@@ -35,7 +35,7 @@ class Collection
         $deleted = 0;
         $client = $this->connection->getCouchDBClient();
 
-        $where['type'] = $this->collection;
+        $where['doc_collection'] = $this->collection;
 
         $result = $client->find($where, ['_id','_rev']);
 
@@ -57,9 +57,9 @@ class Collection
 
     public function insertMany($values)
     {
-        //Force type
+        //Force doc_collection
         foreach($values as &$value){
-            $value['type'] = $this->collection;
+            $value['doc_collection'] = $this->collection;
         }
 
         $client = $this->connection->getCouchDBClient();

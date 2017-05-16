@@ -10,65 +10,66 @@ class Builder extends EloquentBuilder
     protected $query;
 
 
-  /**
- * @inheritdoc
- */
-  /*public function update(array $values, array $options = [])
+    /**
+   * @inheritdoc
+   */
+  public function update(array $values, array $options = [])
   {
-          // Intercept operations on embedded models and delegate logic
+      // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $relation->performUpdate($this->model, $values);
+
+            return 1;
+        }
+      return $this->query->update($this->addUpdatedAtColumn($values), $options);
+  }
+    /**
+   * @inheritdoc
+   */
+  public function insert(array $values)
+  {
+      // Intercept operations on embedded models and delegate logic
       // to the parent relation instance.
       if ($relation = $this->model->getParentRelation()) {
-          $relation->performUpdate($this->model, $values);
+          $relation->performInsert($this->model, $values);
 
-          return 1;
+          return true;
       }
-      return $this->query->update($this->addUpdatedAtColumn($values), $options);
-  }*/
+
+      return parent::insert($values);
+  }
+
   /**
- * @inheritdoc
- */
-/*public function insert(array $values)
-{
-    // Intercept operations on embedded models and delegate logic
-    // to the parent relation instance.
-    if ($relation = $this->model->getParentRelation()) {
-        $relation->performInsert($this->model, $values);
+   * @inheritdoc
+   */
+  public function insertGetId(array $values, $sequence = null)
+  {
+      // Intercept operations on embedded models and delegate logic
+      // to the parent relation instance.
+      if ($relation = $this->model->getParentRelation()) {
+          $relation->performInsert($this->model, $values);
 
-        return true;
-    }
+          return $this->model->getKey();
+      }
 
-    return parent::insert($values);
-}*/
+      return parent::insertGetId($values, $sequence);
+  }
 
-/**
- * @inheritdoc
- */
-/*public function insertGetId(array $values, $sequence = null)
-{
-    // Intercept operations on embedded models and delegate logic
-    // to the parent relation instance.
-    if ($relation = $this->model->getParentRelation()) {
-        $relation->performInsert($this->model, $values);
+  /**
+   * @inheritdoc
+   */
+  public function delete()
+  {
+      // Intercept operations on embedded models and delegate logic
+      // to the parent relation instance.
+      if ($relation = $this->model->getParentRelation()) {
+          $relation->performDelete($this->model);
 
-        return $this->model->getKey();
-    }
+          return $this->model->getKey();
+      }
 
-    return parent::insertGetId($values, $sequence);
-}*/
+      return parent::delete();
+  }
 
-/**
- * @inheritdoc
- */
-/*public function delete()
-{
-    // Intercept operations on embedded models and delegate logic
-    // to the parent relation instance.
-    if ($relation = $this->model->getParentRelation()) {
-        $relation->performDelete($this->model);
-
-        return $this->model->getKey();
-    }
-
-    return parent::delete();
-}*/
 }
