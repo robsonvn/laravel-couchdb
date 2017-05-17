@@ -37,15 +37,13 @@ trait SoftDeletes
         if ($this->fireModelEvent('restoring') === false) {
             return false;
         }
-        //$this->unsetAttribute($this->getDeletedAtColumn());
+
         $this->{$this->getDeletedAtColumn()} = null;
 
         // Once we have saved the model, we will fire the "restored" event so this
         // developer will do anything they need to after a restore operation is
         // totally finished. Then we will return the result of the save call.
         $this->exists = true;
-
-      //  print_r($this->getAttributes());
 
         $result = $this->save();
 

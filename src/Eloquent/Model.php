@@ -2,9 +2,11 @@
 
 namespace Robsonvn\CouchDB\Eloquent;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder as BaseBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
+use Illuminate\Support\Str;
 
 abstract class Model extends BaseModel
 {
@@ -192,6 +194,7 @@ abstract class Model extends BaseModel
           return false;
       }
 
+
       // First we'll need to create a fresh query instance and touch the creation and
       // update timestamps on this model, which are maintained by us for developer
       // convenience. After, we will just continue saving these model instances.
@@ -207,7 +210,10 @@ abstract class Model extends BaseModel
       // If the model has an incrementing key, we can use the "insertGetId" method on
       // the query builder, which will give us back the final inserted ID for this
       // table from the database. Not all tables have to be incrementing though.
-      $attributes = $this->attributes;
+      $attributes = $this->getAttributes();
+
+      //print_r($attributes);
+
       $keyName = $this->getKeyName();
 
       if ($this->getIncrementing() && !isset($attributes['id'])) {
@@ -275,6 +281,7 @@ public function getAttribute($key)
  */
 protected function getAttributeFromArray($key)
 {
+    //TODO add suport to get attribute with cast using doting notation
     // Support keys in dot notation.
     if (str_contains($key, '.')) {
         return array_get($this->attributes, $key);
@@ -283,28 +290,46 @@ protected function getAttributeFromArray($key)
     return parent::getAttributeFromArray($key);
 }
 
+function applyCastArrayRecursive($key, $value){
+    if (is_array($value)) {
+      $is_sequencial = array_keys($value) === range(0, count($value) - 1);
+
+      foreach($value as $subkey=> &$item){
+        //create a dot notation for the key, ignore subkey if is a sequencial array
+        $tree = $key.(($is_sequencial) ? '' : '.'.$subkey);
+
+        $item = $this->applyCastArrayRecursive($tree,$item);
+      }
+      return $value;
+    }else{
+      return $this->applyCasts($key,$value);
+    }
+}
+
+protected function applyCasts($key, $value){
+    //Date cast
+    if (in_array($key, $this->getDates()) && $value) {
+        $value = $this->fromDateTime($value);
+    }
+    return $value;
+}
+
 /**
  * {@inheritdoc}
  */
 public function setAttribute($key, $value)
 {
-    // Convert _id to ObjectID.
-    if ($key == '_id' and is_string($value)) {
-        $builder = $this->newBaseQueryBuilder();
-
-        $value = $value;
-    } // Support keys in dot notation.
-    elseif (str_contains($key, '.')) {
-        if (in_array($key, $this->getDates()) && $value) {
-            $value = $this->fromDateTime($value);
-        }
-
-        array_set($this->attributes, $key, $value);
-
-        return;
+    if(is_array($value)){
+      $value = $this->applyCastArrayRecursive($key,$value);
     }
 
-    parent::setAttribute($key, $value);
+    if (str_contains($key, '.')) {
+        $value = $this->applyCasts($key,$value);
+        array_set($this->attributes, $key, $value);
+        return;
+    }else{
+        parent::setAttribute($key, $value);
+    }
 }
 
 /**
@@ -364,4 +389,145 @@ public function attributesToArray()
 
         $return = $this->update($this->getAttributes());
     }
+
+
+    public function fromDateTime($value)
+    {
+        return $this->asDateTime($value)->format(
+            'Y-m-d H:i:s'
+        );
+    }
+
+    protected function asDateTime($value)
+    {
+        if (is_string($value) && $this->isStandardCouchDBDateFormat($value)) {
+            return Carbon::createFromFormat(
+            'Y-m-d H:i:s', $value
+        );
+        }
+
+        return parent::asDateTime($value);
+    }
+
+    protected function getDateFormat()
+    {
+        return $this->dateFormat ?: 'Y-m-d H:i:s';
+    }
+    /**
+     * Determine if the given value is a standard CouchDB date format.
+     *
+     * @param  string  $value
+     * @return bool
+     */
+    protected function isStandardCouchDBDateFormat($value)
+    {
+        return preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$/', $value);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function push()
+    {
+        if ($parameters = func_get_args()) {
+            $unique = false;
+
+            if (count($parameters) == 3) {
+                list($column, $values, $unique) = $parameters;
+            } else {
+                list($column, $values) = $parameters;
+            }
+
+            // Do batch push by default.
+            if (! is_array($values)) {
+                $values = [$values];
+            }
+
+            $query = $this->setKeysForSaveQuery($this->newQuery());
+
+            $this->pushAttributeValues($column, $values, $unique);
+
+            return $query->push($column, $values, $unique);
+        }
+
+        return parent::push();
+    }
+
+    /**
+     * Remove one or more values from an array.
+     *
+     * @param  string $column
+     * @param  mixed  $values
+     * @return mixed
+     */
+    public function pull($column, $values)
+    {
+        // Do batch pull by default.
+        if (! is_array($values)) {
+            $values = [$values];
+        }
+
+        $query = $this->setKeysForSaveQuery($this->newQuery());
+
+        $this->pullAttributeValues($column, $values);
+
+        return $query->pull($column, $values);
+    }
+
+    /**
+     * Append one or more values to the underlying attribute value and sync with original.
+     *
+     * @param  string $column
+     * @param  array  $values
+     * @param  bool   $unique
+     */
+    protected function pushAttributeValues($column, array $values, $unique = false)
+    {
+        $current = $this->getAttributeFromArray($column) ?: [];
+
+        foreach ($values as $value) {
+            // Don't add duplicate values when we only want unique values.
+            if ($unique and in_array($value, $current)) {
+                continue;
+            }
+
+            array_push($current, $value);
+        }
+
+        $this->attributes[$column] = $current;
+
+        $this->syncOriginalAttribute($column);
+    }
+
+    /**
+     * Remove one or more values to the underlying attribute value and sync with original.
+     *
+     * @param  string $column
+     * @param  array  $values
+     */
+    protected function pullAttributeValues($column, array $values)
+    {
+        $current = $this->getAttributeFromArray($column) ?: [];
+
+        foreach ($values as $value) {
+            $keys = array_keys($current, $value);
+
+            foreach ($keys as $key) {
+                unset($current[$key]);
+            }
+        }
+
+        $this->attributes[$column] = array_values($current);
+
+        $this->syncOriginalAttribute($column);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getForeignKey()
+    {
+        return Str::snake(class_basename($this)).'_'.ltrim($this->primaryKey, '_');
+    }
+
 }

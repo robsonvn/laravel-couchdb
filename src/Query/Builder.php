@@ -2,8 +2,11 @@
 
 namespace Robsonvn\CouchDB\Query;
 
+use DateTime;
+use Closure;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Expression;
 use Robsonvn\CouchDB\Connection;
 
 class Builder extends BaseBuilder
@@ -11,7 +14,7 @@ class Builder extends BaseBuilder
     /**
  * The database collection.
  *
- * @var MongoCollection
+ * @var string
  */
 protected $collection;
 
@@ -246,8 +249,6 @@ protected $useCollections;
         $results = $this->collection->find($wheres, $columns, $sort, $limit, $skip, $index);
 
         if ($results->status != 200) {
-            //var_dump($results);
-          //exit;
           //TODO improve this exception
           throw new \Exception('Query Error');
         }
@@ -311,12 +312,12 @@ protected $useCollections;
                 if (is_array($where['value'])) {
                     array_walk_recursive($where['value'], function (&$item, $key) {
                         if ($item instanceof DateTime) {
-                            $item = new UTCDateTime($item->getTimestamp() * 1000);
+                            $item = $item->format('Y-m-d H:i:s.u');
                         }
                     });
                 } else {
                     if ($where['value'] instanceof DateTime) {
-                        $where['value'] = new UTCDateTime($where['value']->getTimestamp() * 1000);
+                        $where['value'] = $where['value']->format('Y-m-d H:i:s.u');
                     }
                 }
             }
@@ -513,4 +514,20 @@ protected function compileWhereRaw(array $where)
 
       return $this->collection->DeleteMany($wheres);
   }
+  /**
+ * @inheritdoc
+ */
+public function raw($expression = null)
+{
+    // Execute the closure on the mongodb collection
+    if ($expression instanceof Closure) {
+        return call_user_func($expression, $this->collection);
+    } // Create an expression for the given value
+    elseif (! is_null($expression)) {
+        return new Expression($expression);
+    }
+
+    // Quick access to the mongodb collection
+    return $this->collection;
+}
 }

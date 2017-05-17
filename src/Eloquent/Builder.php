@@ -73,4 +73,22 @@ class Builder extends EloquentBuilder
 
       return parent::delete();
   }
+  /**
+ * @inheritdoc
+ */
+  public function raw($expression = null)
+  {
+    // Get raw results from the query builder.
+    $results = $this->query->raw($expression);
+
+    if(is_array($results) and array_key_exists('_id', $results)) {
+        return $this->model->newFromBuilder((array) $results);
+    }
+
+    if($results instanceof \Doctrine\CouchDB\HTTP\Response){
+      return $this->model->hydrate($results->body['docs']);
+    }
+
+    return $results;
+  }
 }

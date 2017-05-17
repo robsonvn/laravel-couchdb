@@ -10,7 +10,7 @@ class ModelTest extends TestCase
     {
         User::truncate();
         Soft::truncate();
-      //  Book::truncate();
+        Book::truncate();
         Item::truncate();
     }
 
@@ -29,6 +29,7 @@ class ModelTest extends TestCase
         $user = new User();
         $user->name = 'John Doe';
         $user->title = 'admin';
+        $user->birthday = new DateTime('1980/1/1');
         $user->age = 35;
 
         $user->save();
@@ -65,8 +66,6 @@ class ModelTest extends TestCase
 
         $this->assertEquals(2, count($all));
 
-        //print_r($all);
-        //exit;
         $this->assertContains('John Doe', $all->pluck('name'));
         $this->assertContains('Jane Doe', $all->pluck('name'));
     }
@@ -399,7 +398,7 @@ class ModelTest extends TestCase
 
         $user = User::where('birthday', '>', new DateTime('1975/1/1'))->first();
 
-        //exit;
+
         $this->assertEquals('John Doe', $user->name);
 
         // test custom date format for json output
@@ -409,11 +408,10 @@ class ModelTest extends TestCase
 
         // test created_at
         $item = Item::create(['name' => 'sword']);
-        $this->assertInstanceOf(UTCDateTime::class, $item->getOriginal('created_at'));
-        $this->assertEquals($item->getOriginal('created_at')
-            ->toDateTime()
-            ->getTimestamp(), $item->created_at->getTimestamp());
+        $this->assertRegExp('/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$/', $item->getOriginal('created_at'));
+        $this->assertEquals(strtotime($item->getOriginal('created_at')), $item->created_at->getTimestamp());
         $this->assertTrue(abs(time() - $item->created_at->getTimestamp()) < 2);
+
 
         // test default date format for json output
         $item = Item::create(['name' => 'sword']);
@@ -429,6 +427,59 @@ class ModelTest extends TestCase
         $user = User::create(['name' => 'Jane Doe', 'birthday' => '2005-08-08']);
         $this->assertInstanceOf(Carbon::class, $user->birthday);
 
+        $params = [
+          'name' => 'ExtremeInsaneTest',
+          'entry' => [
+            'date' => 'Monday 8th of August 2005 03:12:46 PM',
+            'logs'=>[
+              [
+                'log_date'=>'Monday 8th of August 2005 03:12:46 PM',
+                'not_castable_data'=> 'Monday 9th of August 2005 03:12:46 PM',
+                'insane_tests'=>[
+                  [
+                    'date'=>'Monday 8th of August 2005 03:12:46 PM'
+                  ],
+                  [
+                    'date'=>'Monday 8th of August 2005 03:12:46 PM'
+                  ]
+                ]
+              ]
+            ],
+          ],
+          'entry.extreme_insane_test' => [
+            'dates'=>[
+              [
+                'danger_date'=>'Monday 8th of August 2005 03:12:46 PM',
+              ],
+              [
+                'danger_date'=>'Monday 8th of August 2005 03:12:46 PM',
+              ],
+            ]
+          ]
+        ];
+
+        $user = User::create($params);
+        $this->assertInstanceOf(Carbon::class, $user->getAttribute('entry.date'));
+        $this->assertInternalType('array',$logs = $user->getAttribute('entry.logs'));
+
+
+
+        /*foreach($logs as $log){
+          $this->assertInstanceOf(Carbon::class, $log['log_date']);
+          $this->assertNotInstanceOf(Carbon::class, $log['not_castable_data']);
+          $this->assertInternalType('array', $log['insane_tests']);
+          foreach($log['insane_tests'] as $insane){
+            $this->assertInstanceOf(Carbon::class, $insane['date']);
+            echo $insane['date'];
+          }
+        }*/
+
+
+
+        //print_r($user);
+
+        //return;
+
         $user = User::create(['name' => 'Jane Doe', 'entry' => ['date' => '2005-08-08']]);
         $this->assertInstanceOf(Carbon::class, $user->getAttribute('entry.date'));
 
@@ -436,20 +487,12 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(Carbon::class, $user->getAttribute('entry.date'));
 
         $data = $user->toArray();
-        $this->assertNotInstanceOf(UTCDateTime::class, $data['entry']['date']);
+
         $this->assertEquals((string) $user->getAttribute('entry.date')->format('Y-m-d H:i:s'), $data['entry']['date']);
     }
 
+
 /*
-    public function testIdAttribute()
-    {
-        $user = User::create(['name' => 'John Doe']);
-        $this->assertEquals($user->id, $user->_id);
-
-        $user = User::create(['id' => 'custom_id', 'name' => 'John Doe']);
-        $this->assertNotEquals($user->id, $user->_id);
-    }
-
     public function testPushPull()
     {
         $user = User::create(['name' => 'John Doe']);
@@ -474,7 +517,7 @@ class ModelTest extends TestCase
         $this->assertEquals([], $user->tags);
         $user = User::where('_id', $user->_id)->first();
         $this->assertEquals([], $user->tags);
-    }
+    }*/
 
     public function testRaw()
     {
@@ -486,8 +529,7 @@ class ModelTest extends TestCase
             return $collection->find(['age' => 35]);
         });
 
-        print_r(get_class($users));
-        exit;
+
         //$this->assertInstanceOf(Collection::class, $users);
         $this->assertInstanceOf(Model::class, $users[0]);
 
@@ -497,16 +539,11 @@ class ModelTest extends TestCase
 
         $this->assertInstanceOf(Model::class, $user);
 
-        $count = User::raw(function ($collection) {
-            return $collection->count();
-        });
-        $this->assertEquals(3, $count);
-
         $result = User::raw(function ($collection) {
             return $collection->insertOne(['name' => 'Yvonne Yoe', 'age' => 35]);
         });
         $this->assertNotNull($result);
-    }*/
+    }
 
     public function testDotNotation()
     {
