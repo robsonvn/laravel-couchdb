@@ -71,6 +71,7 @@ public $operators = [
     'between',
     'ilike',
     'not ilike',
+    'all',
     '&',
     '|',
     'exists',
@@ -161,6 +162,7 @@ protected $useCollections;
         return new self($this->connection, $this->processor);
     }
 
+
     /**
      * {@inheritdoc}
      */
@@ -187,9 +189,14 @@ protected $useCollections;
     }
 
 
+    /**
+     * {@inheritdoc}
+     */
 
-
-
+    public function find($id, $columns = ['*'])
+    {
+        return $this->where('_id', '=', $id)->first($columns);
+    }
 
     /**
      * {@inheritdoc}
@@ -230,6 +237,7 @@ protected $useCollections;
         $sort = ($this->orders) ? [$this->orders]: [];
 
         //Sorry about this, but CouchDB limit is 25 by default
+        //TODO CREATE A DRIVER CURSOR TO AVOID THIS SHIT
         $limit = ($this->limit) ?: 999999999;
 
         $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
@@ -605,6 +613,35 @@ protected function compileWhereRaw(array $where)
       return $this->performUpdate([],['unset'=>$fields]);
   }
 
+  /**
+   * @inheritdoc
+   */
+  public function increment($column, $amount = 1, array $extra = [], array $options = [])
+  {
+      $query = ['$inc' => [$column => $amount]];
+
+      if (! empty($extra)) {
+          $query['$set'] = $extra;
+      }
+
+      // Protect
+      $this->where(function ($query) use ($column) {
+          $query->where($column, 'exists', false);
+
+          $query->orWhereNotNull($column);
+      });
+
+
+      return $this->performUpdate($query, $options);
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function decrement($column, $amount = 1, array $extra = [], array $options = [])
+  {
+      return $this->increment($column, -1 * $amount, $extra, $options);
+  }
   /**
    * @inheritdoc
    */

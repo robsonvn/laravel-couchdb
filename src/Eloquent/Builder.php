@@ -92,4 +92,53 @@ class Builder extends EloquentBuilder
     return $results;
   }
 
+
+    /**
+     * @inheritdoc
+     */
+    public function increment($column, $amount = 1, array $extra = [])
+    {
+        // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $value = $this->model->{$column};
+
+            // When doing increment and decrements, Eloquent will automatically
+            // sync the original attributes. We need to change the attribute
+            // temporary in order to trigger an update query.
+            $this->model->{$column} = null;
+
+            $this->model->syncOriginalAttribute($column);
+
+            $result = $this->model->update([$column => $value]);
+
+            return $result;
+        }
+
+        return parent::increment($column, $amount, $extra);
+    }
+
+    /**
+   * @inheritdoc
+   */
+  public function decrement($column, $amount = 1, array $extra = [])
+  {
+      // Intercept operations on embedded models and delegate logic
+      // to the parent relation instance.
+      if ($relation = $this->model->getParentRelation()) {
+          $value = $this->model->{$column};
+
+          // When doing increment and decrements, Eloquent will automatically
+          // sync the original attributes. We need to change the attribute
+          // temporary in order to trigger an update query.
+          $this->model->{$column} = null;
+
+          $this->model->syncOriginalAttribute($column);
+
+          return $this->model->update([$column => $value]);
+      }
+
+      return parent::decrement($column, $amount, $extra);
+  }
+
 }

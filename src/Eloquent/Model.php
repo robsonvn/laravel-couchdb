@@ -33,7 +33,6 @@ abstract class Model extends BaseModel
      */
     protected $parentRelation;
 
-    protected $attributes_unset = [];
 
     /**
      * {@inheritdoc}
@@ -171,14 +170,10 @@ abstract class Model extends BaseModel
       $attributes = $this->getAttributes();
 
       if ($this->isDirty()) {
-          $options = [
-            'unset'=>$this->getAttributesUnset()
-          ];
-          $response = $this->setKeysForSaveQuery($query)->update($attributes, $options);
+          $response = $this->setKeysForSaveQuery($query)->update($attributes);
           $id = $response[0]['id'];
           $rev = $response[0]['rev'];
           $this->setAttribute($this->getRevisionAttributeName(), $rev);
-          $this->attributes_unset = [];
 
           $this->fireModelEvent('updated', false);
       }
@@ -270,14 +265,6 @@ public function getAttribute($key)
     return parent::getAttribute($key);
 }
 
-    protected function unsetAttribute($key)
-    {
-        if (!$key) {
-            return;
-        }
-        array_set($this->attributes_unset, $key, true);
-        array_forget($this->attributes, $key);
-    }
 
 /**
  * {@inheritdoc}
@@ -370,18 +357,6 @@ public function attributesToArray()
       return $key;
   }
 
-    protected function getAttributesUnset()
-    {
-        return $this->attributes_unset;
-    }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isDirty($attributes = null)
-  {
-      return count($this->getAttributesUnset()) > 0 ? true : parent::isDirty($attributes);
-  }
 
     public function drop($columns)
     {
