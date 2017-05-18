@@ -171,7 +171,12 @@ abstract class Model extends BaseModel
       $attributes = $this->getAttributes();
 
       if ($this->isDirty()) {
-          list($id, $rev) = $this->setKeysForSaveQuery($query)->update($attributes);
+          $options = [
+            'unset'=>$this->getAttributesUnset()
+          ];
+          $response = $this->setKeysForSaveQuery($query)->update($attributes, $options);
+          $id = $response[0]['id'];
+          $rev = $response[0]['rev'];
           $this->setAttribute($this->getRevisionAttributeName(), $rev);
           $this->attributes_unset = [];
 
@@ -211,8 +216,6 @@ abstract class Model extends BaseModel
       // the query builder, which will give us back the final inserted ID for this
       // table from the database. Not all tables have to be incrementing though.
       $attributes = $this->getAttributes();
-
-      //print_r($attributes);
 
       $keyName = $this->getKeyName();
 
@@ -290,44 +293,46 @@ protected function getAttributeFromArray($key)
     return parent::getAttributeFromArray($key);
 }
 
-function applyCastArrayRecursive($key, $value){
-    if (is_array($value)) {
-      $is_sequencial = array_keys($value) === range(0, count($value) - 1);
+    public function applyCastArrayRecursive($key, $value)
+    {
+        if (is_array($value)) {
+            $is_sequencial = array_keys($value) === range(0, count($value) - 1);
 
-      foreach($value as $subkey=> &$item){
-        //create a dot notation for the key, ignore subkey if is a sequencial array
+            foreach ($value as $subkey=> &$item) {
+                //create a dot notation for the key, ignore subkey if is a sequencial array
         $tree = $key.(($is_sequencial) ? '' : '.'.$subkey);
 
-        $item = $this->applyCastArrayRecursive($tree,$item);
-      }
-      return $value;
-    }else{
-      return $this->applyCasts($key,$value);
+                $item = $this->applyCastArrayRecursive($tree, $item);
+            }
+            return $value;
+        } else {
+            return $this->applyCasts($key, $value);
+        }
     }
-}
 
-protected function applyCasts($key, $value){
-    //Date cast
+    protected function applyCasts($key, $value)
+    {
+        //Date cast
     if (in_array($key, $this->getDates()) && $value) {
         $value = $this->fromDateTime($value);
     }
-    return $value;
-}
+        return $value;
+    }
 
 /**
  * {@inheritdoc}
  */
 public function setAttribute($key, $value)
 {
-    if(is_array($value)){
-      $value = $this->applyCastArrayRecursive($key,$value);
+    if (is_array($value)) {
+        $value = $this->applyCastArrayRecursive($key, $value);
     }
 
     if (str_contains($key, '.')) {
-        $value = $this->applyCasts($key,$value);
+        $value = $this->applyCasts($key, $value);
         array_set($this->attributes, $key, $value);
         return;
-    }else{
+    } else {
         parent::setAttribute($key, $value);
     }
 }
@@ -365,15 +370,20 @@ public function attributesToArray()
       return $key;
   }
 
+    protected function getAttributesUnset()
+    {
+        return $this->attributes_unset;
+    }
+
   /**
    * {@inheritdoc}
    */
   public function isDirty($attributes = null)
   {
-      return count($this->attributes_unset) > 0 ? true : parent::isDirty($attributes);
+      return count($this->getAttributesUnset()) > 0 ? true : parent::isDirty($attributes);
   }
 
-    public function unset($columns)
+    public function drop($columns)
     {
         if (!$this->exists) {
             return;
@@ -384,10 +394,14 @@ public function attributesToArray()
         }
 
         foreach ($columns as $column) {
-            $this->unsetAttribute($column);
+            $this->__unset($column);
         }
 
-        $return = $this->update($this->getAttributes());
+        return $this->newQuery()->where(
+        [
+          $this->getKeyName() => $this->getKey(),
+          $this->getRevisionAttributeName() => $this->getRevision()
+        ])->unset($columns);
     }
 
 
@@ -401,9 +415,7 @@ public function attributesToArray()
     protected function asDateTime($value)
     {
         if (is_string($value) && $this->isStandardCouchDBDateFormat($value)) {
-            return Carbon::createFromFormat(
-            'Y-m-d H:i:s', $value
-        );
+            return Carbon::createFromFormat('Y-m-d H:i:s', $value);
         }
 
         return parent::asDateTime($value);
@@ -530,4 +542,16 @@ public function attributesToArray()
         return Str::snake(class_basename($this)).'_'.ltrim($this->primaryKey, '_');
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function __call($method, $parameters)
+    {
+        // Unset method
+        if ($method == 'unset') {
+            return call_user_func_array([$this, 'drop'], $parameters);
+        }
+
+        return parent::__call($method, $parameters);
+    }
 }

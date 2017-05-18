@@ -79,15 +79,43 @@ class Collection
     }
 
 
-    public function findOne($where){
-      $response = $this->find($where,[],[],1);
+    public function findOne($where)
+    {
+        $response = $this->find($where, [], [], 1);
 
-      if($response->status != 200){
-        return;
-      }
+        if ($response->status != 200) {
+            return;
+        }
 
-      if(count($response->body['docs'])>0){
-        return $response->body['docs'][0];
-      }
+        if (count($response->body['docs'])>0) {
+            return $response->body['docs'][0];
+        }
+    }
+
+    public function updateMany($selector, $values, array $options = [])
+    {
+
+        $result = $this->find($selector);
+
+        if ($result->status == 200) {
+            $documents = $result->body['docs'];
+            foreach ($documents as &$document) {
+                //update new values
+                $document = array_merge($document, $values);
+                //remove unset attributes
+                if(isset($options['unset'])){
+                  $document = array_diff_key($document,$options['unset']);
+                }
+            }
+
+            $client = $this->connection->getCouchDBClient();
+            $bulkUpdater = $client->createBulkUpdater();
+            $bulkUpdater->updateDocuments($documents);
+            $response = $bulkUpdater->execute();
+
+            if ($response->status == 201) {
+                return $response->body;
+            }
+        }
     }
 }

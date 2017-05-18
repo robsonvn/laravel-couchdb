@@ -91,4 +91,5 @@ class Builder extends EloquentBuilder
 
     return $results;
   }
+
 }

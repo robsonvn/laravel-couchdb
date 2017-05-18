@@ -36,6 +36,7 @@ class QueryTest extends TestCase
         $this->assertEquals(4, count($users));
 
         $users = User::where('age', '<=', 18)->get();
+
         $this->assertEquals(1, count($users));
 
         $users = User::where('age', '!=', 35)->get();
@@ -54,19 +55,74 @@ class QueryTest extends TestCase
         $this->assertEquals(2, count($users));
     }
 
+    public function testRegex(){
+      $users = User::where('name', 'regex', '(?i).*doe$')->get();
+      $this->assertEquals(2, count($users));
+    }
+
+    public function testNotRegex(){
+      $users = User::where('name', 'not regex', '(?i).*doe$')->get();
+      $this->assertEquals(7, count($users));
+    }
+
     public function testLike()
     {
-        $users = User::where('name', 'like', '%doe')->get();
+        $users = User::where('name', 'like', '%Doe')->get();
         $this->assertEquals(2, count($users));
 
         $users = User::where('name', 'like', '%y%')->get();
-        $this->assertEquals(3, count($users));
+        $this->assertEquals(2, count($users));
 
         $users = User::where('name', 'LIKE', '%y%')->get();
-        $this->assertEquals(3, count($users));
+        $this->assertEquals(2, count($users));
 
         $users = User::where('name', 'like', 't%')->get();
+        $this->assertEquals(0, count($users));
+    }
+
+    public function testILike()
+    {
+        $users = User::where('name', 'ilike', '%doe')->get();
+        $this->assertEquals(2, count($users));
+
+        $users = User::where('name', 'ilike', '%y%')->get();
+        $this->assertEquals(3, count($users));
+
+        $users = User::where('name', 'ILIKE', '%y%')->get();
+        $this->assertEquals(3, count($users));
+
+        $users = User::where('name', 'ilike', 't%')->get();
         $this->assertEquals(1, count($users));
+    }
+
+    public function testNotLike()
+    {
+        $users = User::where('name', 'not like', '%Doe')->get();
+        $this->assertEquals(7, count($users));
+
+        $users = User::where('name', 'not like', '%y%')->get();
+        $this->assertEquals(7, count($users));
+
+        $users = User::where('name', 'NOT LIKE', '%y%')->get();
+        $this->assertEquals(7, count($users));
+
+        $users = User::where('name', 'NOT like', 't%')->get();
+        $this->assertEquals(9, count($users));
+    }
+
+    public function testiNotLike()
+    {
+        $users = User::where('name', 'not ilike', '%doe')->get();
+        $this->assertEquals(7, count($users));
+
+        $users = User::where('name', 'not ilike', '%y%')->get();
+        $this->assertEquals(6, count($users));
+
+        $users = User::where('name', 'NOT ILIKE', '%y%')->get();
+        $this->assertEquals(6, count($users));
+
+        $users = User::where('name', 'NOT ilike', 't%')->get();
+        $this->assertEquals(8, count($users));
     }
 
     public function testSelect()
@@ -147,6 +203,23 @@ class QueryTest extends TestCase
 
     public function testOrder()
     {
+
+        //Create index
+        $connection = DB::connection('couchdb');
+        $client = $connection->getCouchDBClient();
+
+        $httpClient = $client->getHttpClient();
+
+        $params = [
+          "index" => [
+              "fields"=> ["age","doc_collection"]
+          ],
+          "name" => "age_index"
+        ];
+
+        $response = $httpClient->request('POST','/'.$client->getDatabase().'/_index',json_encode($params));
+
+
         $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
         $this->assertEquals(13, $user->age);
 
@@ -156,18 +229,12 @@ class QueryTest extends TestCase
         $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
         $this->assertEquals(37, $user->age);
 
-        $user = User::whereNotNull('age')->orderBy('natural', 'asc')->first();
-        $this->assertEquals(35, $user->age);
-
-        $user = User::whereNotNull('age')->orderBy('natural', 'ASC')->first();
-        $this->assertEquals(35, $user->age);
-
-        $user = User::whereNotNull('age')->orderBy('natural', 'desc')->first();
-        $this->assertEquals(35, $user->age);
     }
 
     public function testGroupBy()
     {
+        $this->markTestSkipped('groupby not implemented yet');
+
         $users = User::groupBy('title')->get();
         $this->assertEquals(3, count($users));
 
@@ -201,7 +268,6 @@ class QueryTest extends TestCase
         $count = User::where('age', '<>', 35)->count();
         $this->assertEquals(6, $count);
 
-        // Test for issue #165
         $count = User::select('_id', 'age', 'title')->where('age', '<>', 35)->count();
         $this->assertEquals(6, $count);
     }
@@ -224,7 +290,7 @@ class QueryTest extends TestCase
 
         $users = User::where('title', 'user')->where(function ($query) {
             $query->where('age', 35)
-                      ->orWhere('name', 'like', '%harry%');
+                      ->orWhere('name', 'ilike', '%harry%');
         })
             ->get();
 
@@ -238,8 +304,7 @@ class QueryTest extends TestCase
 
         $this->assertEquals(5, count($users));
 
-        $users = User::whereNull('deleted_at')
-                ->where('title', 'admin')
+        $users = User::where('title', 'admin')
                 ->where(function ($query) {
                     $query->where('age', '>', 15)
                           ->orWhere('name', 'Harry Hoe');
@@ -248,8 +313,7 @@ class QueryTest extends TestCase
 
         $this->assertEquals(3, $users->count());
 
-        $users = User::whereNull('deleted_at')
-                ->where(function ($query) {
+        $users = User::where(function ($query) {
                     $query->where('name', 'Harry Hoe')
                           ->orWhere(function ($query) {
                               $query->where('age', '>', 15)
@@ -298,6 +362,8 @@ class QueryTest extends TestCase
 
     public function testPaginate()
     {
+        $this->markTestSkipped('paginate not implemented yet');
+
         $results = User::paginate(2);
         $this->assertEquals(2, $results->count());
         $this->assertNotNull($results->first()->title);

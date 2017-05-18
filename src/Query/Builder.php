@@ -70,35 +70,17 @@ public $operators = [
     'not like',
     'between',
     'ilike',
+    'not ilike',
     '&',
     '|',
-    '^',
-    '<<',
-    '>>',
-    'rlike',
-    'regexp',
-    'not regexp',
     'exists',
     'type',
     'mod',
     'where',
-    'all',
     'size',
     'regex',
-    'text',
-    'slice',
+    'not regex',
     'elemmatch',
-    'geowithin',
-    'geointersects',
-    'near',
-    'nearsphere',
-    'geometry',
-    'maxdistance',
-    'center',
-    'centersphere',
-    'box',
-    'polygon',
-    'uniquedocs',
 ];
 
 /**
@@ -116,11 +98,7 @@ protected $conversion = [
     '>=' => '$gte',
 ];
 
-/**
- * Check if we need to return Collections instead of plain arrays (laravel >= 5.3 ).
- *
- * @var bool
- */
+
 protected $useCollections;
 
     /**
@@ -172,7 +150,7 @@ protected $useCollections;
     /**
      * {@inheritdoc}
      */
-    public function count($columns = '*')
+    public function count($columns = ['*'])
     {
         //TODO: add support to aggregate function
       return $this->get()->count();
@@ -193,12 +171,7 @@ protected $useCollections;
 
     protected function performUpdate($values, array $options = [])
     {
-        foreach ($this->wheres as $where) {
-            $column = $where['column'];
-            $$column = $where['value'];
-        }
-
-        return $this->collection->putDocument($values, $_id, $_rev);
+        return $this->collection->updateMany($this->compileWheres(),$values,$options);
     }
 
     /**
@@ -212,6 +185,11 @@ protected $useCollections;
 
         return parent::from($collection);
     }
+
+
+
+
+
 
     /**
      * {@inheritdoc}
@@ -231,9 +209,17 @@ protected $useCollections;
         return $response->status == 201;
     }
 
+
     public function get($columns = [])
     {
-        $columns = (['*'] == $columns) ? [] : $columns;
+        if (is_null($this->columns)) {
+          $this->columns = $columns;
+        }
+
+        // Drop all columns if * is present, CouchDB does not work this way.
+        if (in_array('*', $this->columns)) {
+          $this->columns = [];
+        }
 
         $wheres = $this->compileWheres();
 
@@ -241,12 +227,12 @@ protected $useCollections;
 
         $index = null;
         $skip = ($this->offset) ?: 0;
-        $sort = ($this->orders) ?: [];
+        $sort = ($this->orders) ? [$this->orders]: [];
 
         //Sorry about this, but CouchDB limit is 25 by default
         $limit = ($this->limit) ?: 999999999;
 
-        $results = $this->collection->find($wheres, $columns, $sort, $limit, $skip, $index);
+        $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
 
         if ($results->status != 200) {
           //TODO improve this exception
@@ -272,6 +258,18 @@ protected $useCollections;
         return $query->compileWheres();
     }
 
+    protected function getDatabaseEquivalentDataType($value){
+
+      if ($value instanceof DateTime) {
+        $type = 'string';
+      }else{
+        $type = gettype($value);
+        $type = (in_array($type,['integer','double']) ? 'number' : $type);
+      }
+
+      return $type;
+    }
+
     /**
      * Compile the where array.
      *
@@ -285,7 +283,28 @@ protected $useCollections;
         // We will add all compiled wheres to this array.
         $compiled = [];
 
+        //CouchDB collation order considers null, false and true as less than an integer
+        //and any letter as greater than an integer
+        //to avoid unexpected results, let's specify what type of value we're querying
+        foreach($wheres as $where){
+          if(isset($where['operator']) && in_array($where['operator'],['>','>=','<','<='])){
+
+            $value_type = $this->getDatabaseEquivalentDataType($where['value']);
+
+            if(in_array($value_type,['boolean','number','string'])){
+              $wheres[] = [
+                'type'=> $where['type'],
+                'operator' => 'type',
+                'column' => $where['column'],
+                'boolean' => 'and',
+                'value' => $value_type,
+              ];
+            }
+          }
+        }
+
         foreach ($wheres as $i => &$where) {
+
             // Make sure the operator is in lowercase.
             if (isset($where['operator'])) {
                 $where['operator'] = strtolower($where['operator']);
@@ -361,8 +380,8 @@ protected $useCollections;
         extract($where);
 
         // Replace like with a Regex instance.
-        if ($operator == 'like') {
-            $operator = '=';
+        if(in_array($operator,['like','not like','ilike','not ilike'])){
+
 
             // Convert to regular expression.
             $regex = preg_replace('#(^|[^\\\])%#', '$1.*', preg_quote($value));
@@ -375,22 +394,16 @@ protected $useCollections;
                 $regex = $regex.'$';
             }
 
-            $value = $regex;
-        } // Manipulate regexp operations.
-        elseif (in_array($operator, ['regexp', 'not regexp', 'regex', 'not regex'])) {
-            // Automatically convert regular expression strings to Regex objects.
-            /*if (! $value instanceof Regex) {
-                $e = explode('/', $value);
-                $flag = end($e);
-                $regstr = substr($value, 1, -(strlen($flag) + 1));
-                $value = new Regex($regstr, $flag);
-            }*/
+            //add case insensitive modifier for ilike operation
+            $value = (ends_with($operator,'ilike')) ? '(?i)'.$regex : $regex;
 
-            // For inverse regexp operations, we can just use the $not operator
-            // and pass it a Regex instence.
-            if (starts_with($operator, 'not')) {
-                $operator = 'not';
-            }
+            $operator = preg_replace("/(i|)(like)/",'regex',$operator);
+        }
+
+        // Manipulate negative regexp operations.
+        if ($operator == 'not regex') {
+            $value = "^(?!$value)";
+            $operator = 'regex';
         }
 
         if (!isset($operator) or $operator == '=') {
@@ -458,7 +471,7 @@ protected function compileWhereRaw(array $where)
    */
   protected function compileWhereNotNull(array $where)
   {
-      $where['operator'] = '!=';
+      $where['operator'] = '>';
       $where['value'] = null;
 
       return $this->compileWhereBasic($where);
@@ -472,6 +485,8 @@ protected function compileWhereRaw(array $where)
   protected function compileWhereBetween(array $where)
   {
       extract($where);
+
+      $value_type = $this->getDatabaseEquivalentDataType($values[0]);
 
       if ($not) {
           return [
@@ -487,12 +502,16 @@ protected function compileWhereRaw(array $where)
                       ],
                   ],
               ],
+            $column => [
+              '$type'=>$value_type
+            ]
           ];
       } else {
           return [
               $column => [
                   '$gte' => $values[0],
                   '$lte' => $values[1],
+                  '$type'=>$value_type
               ],
           ];
       }
@@ -514,20 +533,89 @@ protected function compileWhereRaw(array $where)
 
       return $this->collection->DeleteMany($wheres);
   }
+    /**
+   * @inheritdoc
+   */
+  public function raw($expression = null)
+  {
+      // Execute the closure on the mongodb collection
+      if ($expression instanceof Closure) {
+          return call_user_func($expression, $this->collection);
+      } // Create an expression for the given value
+      elseif (! is_null($expression)) {
+          return new Expression($expression);
+      }
+
+      // Quick access to the mongodb collection
+      return $this->collection;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+  {
+      $type = 'between';
+
+      $this->wheres[] = compact('column', 'type', 'boolean', 'values', 'not');
+
+      return $this;
+  }
   /**
  * @inheritdoc
  */
-public function raw($expression = null)
-{
-    // Execute the closure on the mongodb collection
-    if ($expression instanceof Closure) {
-        return call_user_func($expression, $this->collection);
-    } // Create an expression for the given value
-    elseif (! is_null($expression)) {
-        return new Expression($expression);
-    }
+  public function orderBy($column, $direction = 'asc')
+  {
 
-    // Quick access to the mongodb collection
-    return $this->collection;
-}
+      $direction = strtolower($direction);
+
+      if(in_array($direction,['asc','desc'])){
+        $this->orders[$column] = $direction;
+      }
+
+      return $this;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function exists()
+  {
+      return ! is_null($this->first());
+  }
+
+  /**
+ * Remove one or more fields.
+ *
+ * @param  mixed $columns
+ * @return int
+ */
+  public function drop($columns)
+  {
+      if (! is_array($columns)) {
+          $columns = [$columns];
+      }
+
+      $fields = [];
+
+      foreach ($columns as $column) {
+          $fields[$column] = 1;
+      }
+
+      return $this->performUpdate([],['unset'=>$fields]);
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function __call($method, $parameters)
+  {
+      // Unset method
+      if ($method == 'unset') {
+          return call_user_func_array([$this, 'drop'], $parameters);
+      }
+
+      return parent::__call($method, $parameters);
+  }
+
 }
