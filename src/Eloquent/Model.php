@@ -3,10 +3,11 @@
 namespace Robsonvn\CouchDB\Eloquent;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder as BaseBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
-use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
+use Illuminate\Database\Eloquent\Builder as BaseBuilder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
+use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
 
 abstract class Model extends BaseModel
 {

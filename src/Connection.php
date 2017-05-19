@@ -46,19 +46,6 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Dynamically pass methods to the connection.
-     *
-     * @param string $method
-     * @param array  $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        return call_user_func_array([$this->db, $method], $parameters);
-    }
-
-    /**
      * Begin a fluent query against a database collection.
      *
      * @param string $collection
@@ -90,5 +77,18 @@ class Connection extends BaseConnection
     public function getCollection($name)
     {
         return new Collection($this, $name);
+    }
+
+    /**
+     * Dynamically pass methods to the connection.
+     *
+     * @param string $method
+     * @param array  $parameters
+     *
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        return call_user_func_array([$this->db, $method], $parameters);
     }
 }

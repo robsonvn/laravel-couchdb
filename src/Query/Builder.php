@@ -153,7 +153,7 @@ protected $conversion = [
      */
     public function count($columns = ['*'])
     {
-        //TODO: add support to aggregate function
+      //TODO: add support to aggregate function
       return $this->get()->count();
     }
 
