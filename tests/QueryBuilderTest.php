@@ -202,7 +202,6 @@ class QueryBuilderTest extends TestCase
         ]);
 
         $items = DB::collection('items')->whereIn('tags', ['tag2'])->get();
-        //exit;
         $this->assertEquals(2, count($items));
 
         $items = DB::collection('items')->whereIn('tags', ['tag1'])->get();
@@ -237,9 +236,7 @@ class QueryBuilderTest extends TestCase
 
     public function testPush()
     {
-        $this->markTestSkipped('push - pull, not implemented yet');
-
-        $id = DB::collection('users')->insertGetId([
+        list($id,$rev) = DB::collection('users')->insertGetId([
             'name'     => 'John Doe',
             'tags'     => [],
             'messages' => [],
@@ -257,6 +254,27 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(2, count($user['tags']));
         $this->assertEquals('tag2', $user['tags'][1]);
 
+        //Add inexistent array
+        DB::collection('users')->where('_id', $id)->push('privileges', ['admin','supervisor']);
+        $user = DB::collection('users')->find($id);
+        $this->assertEquals(true,is_array($user['privileges']));
+        $this->assertEquals(2, count($user['privileges']));
+        $this->assertEquals('admin', $user['privileges'][0]);
+
+        //Add inexistent array
+        DB::collection('users')->where('_id', $id)->push('roles', 'admin');
+        $user = DB::collection('users')->find($id);
+        $this->assertEquals(true,is_array($user['roles']));
+        $this->assertEquals(1, count($user['roles']));
+        $this->assertEquals('admin', $user['roles'][0]);
+
+        //Add inexistent array duplicated unique
+        DB::collection('users')->where('_id', $id)->push('skills', ['php','php','css'],true);
+        $user = DB::collection('users')->find($id);
+        $this->assertEquals(true,is_array($user['skills']));
+        $this->assertEquals(2, count($user['skills']));
+        $this->assertEquals('css', $user['skills'][1]);
+
         // Add duplicate
         DB::collection('users')->where('_id', $id)->push('tags', 'tag2');
         $user = DB::collection('users')->find($id);
@@ -267,7 +285,12 @@ class QueryBuilderTest extends TestCase
         $user = DB::collection('users')->find($id);
         $this->assertEquals(3, count($user['tags']));
 
+        //Add unique duplicated
+        DB::collection('users')->where('_id', $id)->push('tags', ['tag1','tag1'], true);
+        $user = DB::collection('users')->find($id);
+        $this->assertEquals(3, count($user['tags']));
         $message = ['from' => 'Jane', 'body' => 'Hi John'];
+
         DB::collection('users')->where('_id', $id)->push('messages', $message);
         $user = DB::collection('users')->find($id);
         $this->assertTrue(is_array($user['messages']));
@@ -287,18 +310,21 @@ class QueryBuilderTest extends TestCase
 
     public function testPull()
     {
-        $this->markTestSkipped('push - pull, not implemented yet');
-
         $message1 = ['from' => 'Jane', 'body' => 'Hi John'];
         $message2 = ['from' => 'Mark', 'body' => 'Hi John'];
 
-        $id = DB::collection('users')->insertGetId([
+        list($id,$rev) = DB::collection('users')->insertGetId([
             'name'     => 'John Doe',
             'tags'     => ['tag1', 'tag2', 'tag3', 'tag4'],
             'messages' => [$message1, $message2],
         ]);
 
-        DB::collection('users')->where('_id', $id)->pull('tags', 'tag3');
+
+        $response = DB::collection('users')->where('_id', $id)->pull('tags', ['tag3']);
+
+        $this->assertEquals(1,$response[0]['ok']);
+        $this->assertEquals($id,$response[0]['id']);
+        $this->assertNotEquals($rev,$response[0]['rev']);
 
         $user = DB::collection('users')->find($id);
         $this->assertTrue(is_array($user['tags']));

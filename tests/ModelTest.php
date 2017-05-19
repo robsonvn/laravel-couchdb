@@ -257,6 +257,8 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(Model::class, $user);
         $this->assertEquals(true, $user->exists);
         $this->assertEquals('Jane Poe', $user->name);
+        $this->assertEquals(true, is_string($user->_rev));
+
 
         $check = User::where('name', 'Jane Poe')->first();
         $this->assertEquals($user->_id, $check->_id);
@@ -494,30 +496,56 @@ class ModelTest extends TestCase
 
     public function testPushPull()
     {
-        $this->markTestSkipped('push - pull, not implemented yet');
-
         $user = User::create(['name' => 'John Doe']);
-
+        $last_rev = $user->_rev;
+        //Simple
         $user->push('tags', 'tag1');
+
+        //verify new revision
+        $this->assertEquals(true,is_string($user->_rev));
+        $this->assertNotEquals($last_rev,$user->_rev);
+        $this->assertEquals(['tag1'], $user->tags);
+        //fetch and check
+        $user = User::where('_id', $user->_id)->first();
+        $this->assertEquals(['tag1'], $user->tags);
+
+        //Simple array
         $user->push('tags', ['tag1', 'tag2']);
+        $this->assertEquals(['tag1','tag1','tag2'], $user->tags);
+        //fetch and check
+        $user = User::where('_id', $user->_id)->first();
+        $this->assertEquals(['tag1','tag1','tag2'], $user->tags);
+
+        //simple unique
         $user->push('tags', 'tag2', true);
-
         $this->assertEquals(['tag1', 'tag1', 'tag2'], $user->tags);
+        //fetch and check
         $user = User::where('_id', $user->_id)->first();
         $this->assertEquals(['tag1', 'tag1', 'tag2'], $user->tags);
 
+        //simple pull
+        $last_rev = $user->_rev;
         $user->pull('tags', 'tag1');
-
+        $this->assertNotEquals($last_rev,$user->_rev);
         $this->assertEquals(['tag2'], $user->tags);
+        //fetch and check
         $user = User::where('_id', $user->_id)->first();
         $this->assertEquals(['tag2'], $user->tags);
 
+        //simple push again
         $user->push('tags', 'tag3');
+        $this->assertEquals(['tag2','tag3'], $user->tags);
+
+        //remove all
         $user->pull('tags', ['tag2', 'tag3']);
+        $this->assertEquals([], $user->tags);
+
+
+        $user = User::where('_id', $user->_id)->first();
 
         $this->assertEquals([], $user->tags);
-        $user = User::where('_id', $user->_id)->first();
-        $this->assertEquals([], $user->tags);
+
+
     }
 
     public function testRaw()

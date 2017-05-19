@@ -2,6 +2,8 @@
 
 namespace Robsonvn\CouchDB;
 
+use Robsonvn\CouchDB\Helpers\Arr;
+
 class Collection
 {
     protected $connection;
@@ -94,7 +96,6 @@ class Collection
 
     public function updateMany($selector, $values, array $options = [])
     {
-
         $result = $this->find($selector);
 
         if ($result->status == 200) {
@@ -102,10 +103,8 @@ class Collection
             foreach ($documents as &$document) {
                 //update new values
                 $document = array_merge($document, $values);
-                //remove unset attributes
-                if(isset($options['unset'])){
-                  $document = array_diff_key($document,$options['unset']);
-                }
+
+                $document = $this->applyUpdateOptions($document,$options);
             }
 
             $client = $this->connection->getCouchDBClient();
@@ -117,5 +116,72 @@ class Collection
                 return $response->body;
             }
         }
+    }
+
+    protected function applyUpdateOptions($document, $options){
+      foreach($options as $option=>$value){
+        $option = ucfirst(str_replace('$','',$option));
+        $method = 'applyUpdateOption'.$option;
+        if(method_exists($this,$method)){
+          $document = call_user_func_array([$this,$method],[$document,$value]);
+        }
+      }
+      return $document;
+    }
+
+    protected function applyUpdateOptionUnset($document,$options){
+      return array_diff_key($document, $options);
+    }
+
+    protected function applyUpdateOptionAddToSet($document,$options){
+      return $this->applyUpdateOptionPush($document,$options, true);
+    }
+
+    protected function applyUpdateOptionPush($document,$options, $unique = false){
+      foreach($options as $key=>$value){
+
+        if(is_array($value) && array_key_exists('$each',$value)){
+          $value = $value['$each'];
+        }else{
+          $value = [$value];
+        }
+
+        //If there's no value yet
+        if(!array_key_exists($key,$document)){
+          $value = (array) $value;
+          //apply unique treatment
+          if($unique){
+            $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+            $value = array_unique($value);
+            //if is a sequencial array, reset array index
+            if($is_sequencial){
+              $value = array_values($value);
+            }
+          }
+          $document[$key] = $value;
+          continue;
+        }
+
+        foreach($value as $v){
+          if(!$unique || !in_array($v,$document[$key])){
+            array_push($document[$key], $v);
+          }
+        }
+      }
+      return $document;
+    }
+
+    protected function applyUpdateOptionPullAll($document,$options){
+      //print_r($document);
+      //print_r($options);
+      //cast array values into a sequencial array
+      array_walk($options,function (&$value) {
+          $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+          if (!$is_sequencial) {
+              $value = [$value];
+          }
+      });
+
+      return Arr::array_diff_recursive($document, $options);
     }
 }

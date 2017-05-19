@@ -610,7 +610,55 @@ protected function compileWhereRaw(array $where)
           $fields[$column] = 1;
       }
 
-      return $this->performUpdate([],['unset'=>$fields]);
+      return $this->performUpdate([],['$unset'=>$fields]);
+  }
+
+  /**
+   * Append one or more values to an array.
+   *
+   * @param mixed $column
+   * @param mixed $value
+   * @param bool  $unique
+   * @return int
+   */
+  public function push($column, $value = null, $unique = false)
+  {
+      // Use the addToSet operator in case we only want unique items.
+      $operator = $unique ? '$addToSet' : '$push';
+
+      // Check if we are pushing multiple values.
+      $batch = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+
+      if (is_array($column)) {
+          $query = [$operator => $column];
+      } elseif ($batch) {
+          $query = [$operator => [$column => ['$each' => $value]]];
+      } else {
+          $query = [$operator => [$column => $value]];
+      }
+
+      return $this->performUpdate([],$query);
+  }
+
+   /**
+   * Remove one or more values from an array.
+   *
+   * @param  mixed $column
+   * @param  mixed $value
+   * @return int
+   */
+  public function pull($column, $value = null)
+  {
+
+      $operator = '$pullAll';
+
+      if (is_array($column)) {
+        $query = [$operator => $column];
+      } else {
+        $query = [$operator => [$column => $value]];
+      }
+
+      return $this->performUpdate([],$query);
   }
 
   /**

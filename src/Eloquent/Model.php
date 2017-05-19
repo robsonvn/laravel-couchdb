@@ -434,7 +434,11 @@ public function attributesToArray()
 
             $this->pushAttributeValues($column, $values, $unique);
 
-            return $query->push($column, $values, $unique);
+            $response = $query->push($column, $values, $unique);
+
+            $this->attributes['_rev'] = $response[0]['rev'];
+            $this->syncOriginalAttribute('_rev');
+            return $this;
         }
 
         return parent::push();
@@ -458,7 +462,11 @@ public function attributesToArray()
 
         $this->pullAttributeValues($column, $values);
 
-        return $query->pull($column, $values);
+        $response = $query->pull($column, $values);
+
+        $this->attributes['_rev'] = $response[0]['rev'];
+        $this->syncOriginalAttribute('_rev');
+        return $this;
     }
 
     /**

@@ -141,4 +141,11 @@ class Builder extends EloquentBuilder
       return parent::decrement($column, $amount, $extra);
   }
 
+  public function push($column, $values, $unique = false){
+    return $this->query->push($column, $values, $unique);
+  }
+
+  public function pull($column, $values){
+    return $this->query->pull($column, $values);
+  }
 }
