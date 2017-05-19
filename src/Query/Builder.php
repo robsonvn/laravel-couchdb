@@ -100,7 +100,7 @@ protected $conversion = [
 ];
 
 
-protected $useCollections;
+    protected $useCollections;
 
     /**
      * {@inheritdoc}
@@ -173,7 +173,7 @@ protected $useCollections;
 
     protected function performUpdate($values, array $options = [])
     {
-        return $this->collection->updateMany($this->compileWheres(),$values,$options);
+        return $this->collection->updateMany($this->compileWheres(), $values, $options);
     }
 
     /**
@@ -215,19 +215,60 @@ protected $useCollections;
 
         return $response->status == 201;
     }
+    /**
+     * @inheritdoc
+     */
+    public function where($column, $operator = null, $value = null, $boolean = 'and'){
+      if(is_null($value) && $operator=='>='){
+        $this->wheres[] = [
+          'type'=>'Basic',
+          'operator'=>'>=',
+          'column'=>$column,
+          'value'=>null,
+          'boolean'=>$boolean
 
+        ];
+        return $this;
+      }
+      return parent::where($column, $operator, $value, $boolean);
+    }
+    /**
+    * Unfortunately, CouchDB require that the fields there are being ordained must be on selector clausure
+    * For those who aren't being select, let's add a selector field >= null
+    */
+    protected function addWhereGreaterThanNullForOrdersField()
+    {
+        if (is_array($this->orders)) {
+            foreach ($this->orders as $field => $direction) {
+                $exists = false;
+                //search if exist any filter for this field
+                if (is_array($this->wheres)) {
+                    foreach ($this->wheres as $where) {
+                        if ($where['column']==$field) {
+                            $exists = true;
+                            continue;
+                        }
+                    }
+                }
+                if(!$exists){
+                  $this->where($field, '>=', null);
+                }
+            }
+        }
+    }
 
     public function get($columns = [])
     {
         if (is_null($this->columns)) {
-          $this->columns = $columns;
+            $this->columns = $columns;
         }
 
         // Drop all columns if * is present, CouchDB does not work this way.
         if (in_array('*', $this->columns)) {
-          $this->columns = [];
+            $this->columns = [];
         }
 
+        $this->addWhereGreaterThanNullForOrdersField();
         $wheres = $this->compileWheres();
 
         //TODO work with projections $this->projections
@@ -242,7 +283,11 @@ protected $useCollections;
 
         $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
 
+        //Create a global try catch for on couchdb driver
         if ($results->status != 200) {
+            if ($results->status==500) {
+                throw new \Exception('IndexError, no-index or no matching fields order/selector');
+            }
           //TODO improve this exception
           throw new \Exception('Query Error');
         }
@@ -266,16 +311,16 @@ protected $useCollections;
         return $query->compileWheres();
     }
 
-    protected function getDatabaseEquivalentDataType($value){
+    protected function getDatabaseEquivalentDataType($value)
+    {
+        if ($value instanceof DateTime) {
+            $type = 'string';
+        } else {
+            $type = gettype($value);
+            $type = (in_array($type, ['integer','double']) ? 'number' : $type);
+        }
 
-      if ($value instanceof DateTime) {
-        $type = 'string';
-      }else{
-        $type = gettype($value);
-        $type = (in_array($type,['integer','double']) ? 'number' : $type);
-      }
-
-      return $type;
+        return $type;
     }
 
     /**
@@ -286,7 +331,7 @@ protected $useCollections;
     protected function compileWheres()
     {
         // The wheres to compile.
-        $wheres = $this->wheres ?: [];
+        $wheres = is_array($this->wheres )? $this->wheres : [];
 
         // We will add all compiled wheres to this array.
         $compiled = [];
@@ -294,21 +339,20 @@ protected $useCollections;
         //CouchDB collation order considers null, false and true as less than an integer
         //and any letter as greater than an integer
         //to avoid unexpected results, let's specify what type of value we're querying
-        foreach($wheres as $where){
-          if(isset($where['operator']) && in_array($where['operator'],['>','>=','<','<='])){
+        foreach ($wheres as $where) {
+            if (isset($where['operator']) && in_array($where['operator'], ['>','>=','<','<='])) {
+                $value_type = $this->getDatabaseEquivalentDataType($where['value']);
 
-            $value_type = $this->getDatabaseEquivalentDataType($where['value']);
-
-            if(in_array($value_type,['boolean','number','string'])){
-              $wheres[] = [
+                if (in_array($value_type, ['boolean','number','string'])) {
+                    $wheres[] = [
                 'type'=> $where['type'],
                 'operator' => 'type',
                 'column' => $where['column'],
                 'boolean' => 'and',
                 'value' => $value_type,
               ];
+                }
             }
-          }
         }
 
         foreach ($wheres as $i => &$where) {
@@ -358,6 +402,11 @@ protected $useCollections;
 
             // We use different methods to compile different wheres.
             $method = "compileWhere{$where['type']}";
+          /*  if(!method_exists($this,$method)){
+              var_dump($wheres);
+              exit;
+            }*/
+
             $result = $this->{$method}($where);
 
             // Wrap the where with an $or operator.
@@ -388,7 +437,7 @@ protected $useCollections;
         extract($where);
 
         // Replace like with a Regex instance.
-        if(in_array($operator,['like','not like','ilike','not ilike'])){
+        if (in_array($operator, ['like','not like','ilike','not ilike'])) {
 
 
             // Convert to regular expression.
@@ -403,9 +452,9 @@ protected $useCollections;
             }
 
             //add case insensitive modifier for ilike operation
-            $value = (ends_with($operator,'ilike')) ? '(?i)'.$regex : $regex;
+            $value = (ends_with($operator, 'ilike')) ? '(?i)'.$regex : $regex;
 
-            $operator = preg_replace("/(i|)(like)/",'regex',$operator);
+            $operator = preg_replace("/(i|)(like)/", 'regex', $operator);
         }
 
         // Manipulate negative regexp operations.
@@ -574,11 +623,10 @@ protected function compileWhereRaw(array $where)
  */
   public function orderBy($column, $direction = 'asc')
   {
-
       $direction = strtolower($direction);
 
-      if(in_array($direction,['asc','desc'])){
-        $this->orders[$column] = $direction;
+      if (in_array($direction, ['asc','desc'])) {
+          $this->orders[$column] = $direction;
       }
 
       return $this;
@@ -610,7 +658,7 @@ protected function compileWhereRaw(array $where)
           $fields[$column] = 1;
       }
 
-      return $this->performUpdate([],['$unset'=>$fields]);
+      return $this->performUpdate([], ['$unset'=>$fields]);
   }
 
   /**
@@ -637,7 +685,7 @@ protected function compileWhereRaw(array $where)
           $query = [$operator => [$column => $value]];
       }
 
-      return $this->performUpdate([],$query);
+      return $this->performUpdate([], $query);
   }
 
    /**
@@ -649,16 +697,15 @@ protected function compileWhereRaw(array $where)
    */
   public function pull($column, $value = null)
   {
-
       $operator = '$pullAll';
 
       if (is_array($column)) {
-        $query = [$operator => $column];
+          $query = [$operator => $column];
       } else {
-        $query = [$operator => [$column => $value]];
+          $query = [$operator => [$column => $value]];
       }
 
-      return $this->performUpdate([],$query);
+      return $this->performUpdate([], $query);
   }
 
   /**
@@ -690,6 +737,8 @@ protected function compileWhereRaw(array $where)
   {
       return $this->increment($column, -1 * $amount, $extra, $options);
   }
+
+
   /**
    * @inheritdoc
    */
@@ -702,5 +751,4 @@ protected function compileWhereRaw(array $where)
 
       return parent::__call($method, $parameters);
   }
-
 }

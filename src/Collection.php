@@ -22,8 +22,9 @@ class Collection
 
     public function __call($method, $parameters)
     {
+
         $parameters[0]['doc_collection'] = $this->collection;
-        //echo "\n $method \n ".json_encode($parameters,JSON_PRETTY_PRINT);
+
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
         return $result;

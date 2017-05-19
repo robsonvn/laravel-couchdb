@@ -74,7 +74,7 @@ class BelongsToMany extends EloquentBelongsToMany
     {
         $foreign = $this->getForeignKey();
 
-        $this->query->where($foreign, '=', $this->parent->getKey());
+        $this->query->whereIn($foreign, [$this->parent->getKey()]);
 
         return $this;
     }
