@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
-use MongoDB\BSON\ObjectID;
 
 class EmbedsMany extends EmbedsOneOrMany
 {
@@ -40,22 +39,27 @@ class EmbedsMany extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' and !$model->getKey()) {
-            $model->setAttribute('_id', new ObjectID());
+       if ($model->getKeyName() == '_id' and !$model->getKey()) {
+            $model->setAttribute('_id', uniqid());
         }
 
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
-
             return $this->parent->save() ? $model : false;
         }
 
         // Push the new model to the database.
         $result = $this->getBaseQuery()->push($this->localKey, $model->getAttributes(), true);
 
+        $result = current($result);
+
+        //Reload parent values
+        $this->parent->fill($this->parent->fresh()->getAttributes());
+        $this->parent->syncOriginal();
+
         // Attach the model to its parent.
-        if ($result) {
+        if ($result['ok']) {
             $this->associate($model);
         }
 
@@ -81,15 +85,25 @@ class EmbedsMany extends EmbedsOneOrMany
         // Get the correct foreign key value.
         $foreignKey = $this->getForeignKeyValue($model);
 
-        // Use array dot notation for better update behavior.
-        $values = array_dot($model->getDirty(), $this->localKey.'.$.');
+        $entries = $this->parent->getOriginal($this->localKey);
 
-        // Update document in database.
-        $result = $this->getBaseQuery()->where($this->localKey.'.'.$model->getKeyName(), $foreignKey)
-            ->update($values);
+        foreach($entries as &$entry){
+          if($entry['_id']==$foreignKey){
+            $entry = $model->getAttributes();
+          }
+        }
+
+        // Update document in database
+        $query = $this->getBaseQuery()->where($this->localKey,'elemmatch', [$model->getKeyName()=>$foreignKey]);
+        $response = $query->update([$this->localKey=>$entries]);
+        $result = current($response);
+
+        //Reload parent values
+        $this->parent->fill($this->parent->fresh()->getAttributes());
+        $this->parent->syncOriginal();
 
         // Attach the model to its parent.
-        if ($result) {
+        if ($result['ok']) {
             $this->associate($model);
         }
 
@@ -117,7 +131,11 @@ class EmbedsMany extends EmbedsOneOrMany
 
         $result = $this->getBaseQuery()->pull($this->localKey, [$model->getKeyName() => $foreignKey]);
 
-        if ($result) {
+        $result = current($result);
+        //update parent rev
+        $this->parent->setAttribute($this->parent->getRevisionAttributeName(), $result['rev']);
+
+        if ($result['ok']) {
             $this->dissociate($model);
         }
 
@@ -248,7 +266,7 @@ class EmbedsMany extends EmbedsOneOrMany
     {
         // Create a new key if needed.
         if (!$model->getAttribute('_id')) {
-            $model->setAttribute('_id', new ObjectID());
+            $model->setAttribute('_id', uniqid());
         }
 
         $records = $this->getEmbedded();

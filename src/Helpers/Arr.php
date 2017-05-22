@@ -13,7 +13,7 @@ class Arr
           if (array_key_exists($key, $arr2)) {
               if (is_array($value)) {
                   $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
-
+            
                   $recursiveDiff = Arr::array_diff_recursive($value, $arr2[$key]);
 
                   if (count($recursiveDiff)) {

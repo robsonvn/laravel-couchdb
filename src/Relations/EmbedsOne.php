@@ -3,7 +3,6 @@
 namespace Robsonvn\CouchDB\Relations;
 
 use Illuminate\Database\Eloquent\Model;
-use MongoDB\BSON\ObjectID;
 
 class EmbedsOne extends EmbedsOneOrMany
 {
@@ -38,17 +37,21 @@ class EmbedsOne extends EmbedsOneOrMany
     {
         // Generate a new key if needed.
         if ($model->getKeyName() == '_id' and !$model->getKey()) {
-            $model->setAttribute('_id', new ObjectID());
+            $model->setAttribute('_id', uniqid());
         }
 
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
-
             return $this->parent->save() ? $model : false;
         }
 
         $result = $this->getBaseQuery()->update([$this->localKey => $model->getAttributes()]);
+
+        $result = current($result);
+        //update parent rev
+        $this->parent->setAttribute($this->parent->getRevisionAttributeName(), $result['rev']);
+        $this->parent->syncOriginal();
 
         // Attach the model to its parent.
         if ($result) {
@@ -73,10 +76,12 @@ class EmbedsOne extends EmbedsOneOrMany
             return $this->parent->save();
         }
 
-        // Use array dot notation for better update behavior.
-        $values = array_dot($model->getDirty(), $this->localKey.'.');
+        $result = $this->getBaseQuery()->update([$this->localKey => $model->getAttributes()]);
 
-        $result = $this->getBaseQuery()->update($values);
+        $result = current($result);
+        //update parent rev
+        $this->parent->setAttribute($this->parent->getRevisionAttributeName(), $result['rev']);
+        $this->parent->syncOriginal();
 
         // Attach the model to its parent.
         if ($result) {

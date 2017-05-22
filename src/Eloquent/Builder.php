@@ -37,7 +37,6 @@ class Builder extends EloquentBuilder
       // to the parent relation instance.
       if ($relation = $this->model->getParentRelation()) {
           $relation->performInsert($this->model, $values);
-
           return true;
       }
 
@@ -54,7 +53,7 @@ class Builder extends EloquentBuilder
       if ($relation = $this->model->getParentRelation()) {
           $relation->performInsert($this->model, $values);
 
-          return $this->model->getKey();
+          return [$this->model->getKey(),null];
       }
 
       return parent::insertGetId($values, $sequence);

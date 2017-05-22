@@ -249,8 +249,7 @@ abstract class EmbedsOneOrMany extends Relation
             $id = $id->getKey();
         }
 
-        // Convert the id to MongoId if necessary.
-        return $this->getBaseQuery()->convertKey($id);
+        return $id;
     }
 
     /**

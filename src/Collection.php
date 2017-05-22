@@ -25,6 +25,9 @@ class Collection
 
         $parameters[0]['doc_collection'] = $this->collection;
 
+        //echo "\n$method \n";
+        //echo json_encode($parameters,JSON_PRETTY_PRINT);
+
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
         return $result;
@@ -34,7 +37,6 @@ class Collection
     {
         $deleted = 0;
         $client = $this->connection->getCouchDBClient();
-
         $where['doc_collection'] = $this->collection;
 
         $result = $client->find($where, ['_id', '_rev']);
@@ -164,17 +166,30 @@ class Collection
         }
 
         foreach($value as $v){
-          if(!$unique || !in_array($v,$document[$key])){
+          if(!$unique || !$this->checkIfExists($v,$document[$key])){
             array_push($document[$key], $v);
           }
         }
       }
+
       return $document;
     }
 
+    protected function checkIfExists($new,$documents){
+
+      if(is_array($new) && key_exists('_id',$new)){
+        foreach($documents as $document){
+          if(isset($document['_id']) && $document['_id']==$new['_id']){
+            return true;
+          }
+        }
+      }
+
+      return in_array($new,$documents);
+    }
+
+
     protected function applyUpdateOptionPullAll($document,$options){
-      //print_r($document);
-      //print_r($options);
       //cast array values into a sequencial array
       array_walk($options,function (&$value) {
           $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));

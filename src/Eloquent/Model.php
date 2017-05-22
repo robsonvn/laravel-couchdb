@@ -82,7 +82,10 @@ abstract class Model extends BaseModel
     protected function setKeysForSaveQuery(BaseBuilder $query)
     {
         $query->where($this->getKeyName(), '=', $this->getKeyForSaveQuery());
-        $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
+
+        if($this->getRevision()){
+          $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
+        }
 
         return $query;
     }
@@ -172,9 +175,12 @@ abstract class Model extends BaseModel
 
       if ($this->isDirty()) {
           $response = $this->setKeysForSaveQuery($query)->update($attributes);
-          $id = $response[0]['id'];
-          $rev = $response[0]['rev'];
-          $this->setAttribute($this->getRevisionAttributeName(), $rev);
+
+          if(count($response)){
+            $id = $response[0]['id'];
+            $rev = $response[0]['rev'];
+            $this->setAttribute($this->getRevisionAttributeName(), $rev);
+          }
 
           $this->fireModelEvent('updated', false);
       }
@@ -230,7 +236,9 @@ abstract class Model extends BaseModel
       }
 
       $this->setAttribute($keyName, $id);
-      $this->setAttribute($this->getRevisionAttributeName(), $rev);
+      if($rev){
+        $this->setAttribute($this->getRevisionAttributeName(), $rev);
+      }
 
       // We will go ahead and set the exists property to true, so that it is set when
       // the created event is fired, just in case the developer tries to update it
