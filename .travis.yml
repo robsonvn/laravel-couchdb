@@ -14,7 +14,7 @@ before_script:
   - git clone https://gist.github.com/9a8e74487573f25bd83b59aac328bf6d.git .
   - sudo sh install-couchdb-2.0.0-travis-ci.sh
   - sleep 10
-  - curl -X PUT localhost:5984/doctrine_test_database
+  - curl -X PUT localhost:5984/unittest
   - cd ..
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
