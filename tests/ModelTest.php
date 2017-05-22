@@ -185,7 +185,6 @@ class ModelTest extends TestCase
 
         $result = User::where([['title', '=', 'admin'], ['name', '=', 'John Doe']])->get();
         $this->assertEquals(1, $result->count());
-
     }
 
     public function testDelete()
@@ -258,7 +257,6 @@ class ModelTest extends TestCase
         $this->assertEquals(true, $user->exists);
         $this->assertEquals('Jane Poe', $user->name);
         $this->assertEquals(true, is_string($user->_rev));
-
 
         $check = User::where('name', 'Jane Poe')->first();
         $this->assertEquals($user->_id, $check->_id);
@@ -366,8 +364,6 @@ class ModelTest extends TestCase
 
         $user1->unset('note1');
 
-
-
         $this->assertFalse(isset($user1->note1));
         $this->assertTrue(isset($user1->note2));
         $this->assertTrue(isset($user2->note1));
@@ -412,7 +408,6 @@ class ModelTest extends TestCase
         $this->assertRegExp('/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$/', $item->getOriginal('created_at'));
         $this->assertEquals(strtotime($item->getOriginal('created_at')), $item->created_at->getTimestamp());
         $this->assertTrue(abs(time() - $item->created_at->getTimestamp()) < 2);
-
 
         // test default date format for json output
         $item = Item::create(['name' => 'sword']);
@@ -464,7 +459,6 @@ class ModelTest extends TestCase
         $this->assertInternalType('array',$logs = $user->getAttribute('entry.logs'));
 */
 
-
         /*foreach($logs as $log){
           $this->assertInstanceOf(Carbon::class, $log['log_date']);
           $this->assertNotInstanceOf(Carbon::class, $log['not_castable_data']);
@@ -474,8 +468,6 @@ class ModelTest extends TestCase
             echo $insane['date'];
           }
         }*/
-
-
 
         //print_r($user);
 
@@ -492,8 +484,6 @@ class ModelTest extends TestCase
         $this->assertEquals((string) $user->getAttribute('entry.date')->format('Y-m-d H:i:s'), $data['entry']['date']);
     }
 
-
-
     public function testPushPull()
     {
         $user = User::create(['name' => 'John Doe']);
@@ -502,8 +492,8 @@ class ModelTest extends TestCase
         $user->push('tags', 'tag1');
 
         //verify new revision
-        $this->assertEquals(true,is_string($user->_rev));
-        $this->assertNotEquals($last_rev,$user->_rev);
+        $this->assertEquals(true, is_string($user->_rev));
+        $this->assertNotEquals($last_rev, $user->_rev);
         $this->assertEquals(['tag1'], $user->tags);
         //fetch and check
         $user = User::where('_id', $user->_id)->first();
@@ -511,10 +501,10 @@ class ModelTest extends TestCase
 
         //Simple array
         $user->push('tags', ['tag1', 'tag2']);
-        $this->assertEquals(['tag1','tag1','tag2'], $user->tags);
+        $this->assertEquals(['tag1', 'tag1', 'tag2'], $user->tags);
         //fetch and check
         $user = User::where('_id', $user->_id)->first();
-        $this->assertEquals(['tag1','tag1','tag2'], $user->tags);
+        $this->assertEquals(['tag1', 'tag1', 'tag2'], $user->tags);
 
         //simple unique
         $user->push('tags', 'tag2', true);
@@ -526,7 +516,7 @@ class ModelTest extends TestCase
         //simple pull
         $last_rev = $user->_rev;
         $user->pull('tags', 'tag1');
-        $this->assertNotEquals($last_rev,$user->_rev);
+        $this->assertNotEquals($last_rev, $user->_rev);
         $this->assertEquals(['tag2'], $user->tags);
         //fetch and check
         $user = User::where('_id', $user->_id)->first();
@@ -534,18 +524,15 @@ class ModelTest extends TestCase
 
         //simple push again
         $user->push('tags', 'tag3');
-        $this->assertEquals(['tag2','tag3'], $user->tags);
+        $this->assertEquals(['tag2', 'tag3'], $user->tags);
 
         //remove all
         $user->pull('tags', ['tag2', 'tag3']);
         $this->assertEquals([], $user->tags);
 
-
         $user = User::where('_id', $user->_id)->first();
 
         $this->assertEquals([], $user->tags);
-
-
     }
 
     public function testRaw()
@@ -610,7 +597,6 @@ class ModelTest extends TestCase
         $this->assertEquals('The first chapter', $book['chapters.one.title']);
     }
 
-
     public function testGetDirtyDates()
     {
         $this->markTestSkipped('i have to study it more, not implemented yet');
@@ -621,7 +607,5 @@ class ModelTest extends TestCase
 
         $user->birthday = new DateTime('19 august 1989');
         $this->assertEmpty($user->getDirty());
-
-
     }
 }

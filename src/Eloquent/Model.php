@@ -3,8 +3,8 @@
 namespace Robsonvn\CouchDB\Eloquent;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Database\Eloquent\Builder as BaseBuilder;
+use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Robsonvn\CouchDB\Query\Builder as QueryBuilder;
@@ -33,7 +33,6 @@ abstract class Model extends BaseModel
      * @var Relation
      */
     protected $parentRelation;
-
 
     /**
      * {@inheritdoc}
@@ -83,8 +82,8 @@ abstract class Model extends BaseModel
     {
         $query->where($this->getKeyName(), '=', $this->getKeyForSaveQuery());
 
-        if($this->getRevision()){
-          $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
+        if ($this->getRevision()) {
+            $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
         }
 
         return $query;
@@ -176,10 +175,10 @@ abstract class Model extends BaseModel
       if ($this->isDirty()) {
           $response = $this->setKeysForSaveQuery($query)->update($attributes);
 
-          if(count($response)){
-            $id = $response[0]['id'];
-            $rev = $response[0]['rev'];
-            $this->setAttribute($this->getRevisionAttributeName(), $rev);
+          if (count($response)) {
+              $id = $response[0]['id'];
+              $rev = $response[0]['rev'];
+              $this->setAttribute($this->getRevisionAttributeName(), $rev);
           }
 
           $this->fireModelEvent('updated', false);
@@ -200,7 +199,6 @@ abstract class Model extends BaseModel
       if ($this->fireModelEvent('creating') === false) {
           return false;
       }
-
 
       // First we'll need to create a fresh query instance and touch the creation and
       // update timestamps on this model, which are maintained by us for developer
@@ -236,8 +234,8 @@ abstract class Model extends BaseModel
       }
 
       $this->setAttribute($keyName, $id);
-      if($rev){
-        $this->setAttribute($this->getRevisionAttributeName(), $rev);
+      if ($rev) {
+          $this->setAttribute($this->getRevisionAttributeName(), $rev);
       }
 
       // We will go ahead and set the exists property to true, so that it is set when
@@ -274,7 +272,6 @@ public function getAttribute($key)
     return parent::getAttribute($key);
 }
 
-
 /**
  * {@inheritdoc}
  */
@@ -300,6 +297,7 @@ protected function getAttributeFromArray($key)
 
                 $item = $this->applyCastArrayRecursive($tree, $item);
             }
+
             return $value;
         } else {
             return $this->applyCasts($key, $value);
@@ -312,6 +310,7 @@ protected function getAttributeFromArray($key)
     if (in_array($key, $this->getDates()) && $value) {
         $value = $this->fromDateTime($value);
     }
+
         return $value;
     }
 
@@ -327,6 +326,7 @@ public function setAttribute($key, $value)
     if (str_contains($key, '.')) {
         $value = $this->applyCasts($key, $value);
         array_set($this->attributes, $key, $value);
+
         return;
     } else {
         parent::setAttribute($key, $value);
@@ -366,7 +366,6 @@ public function attributesToArray()
       return $key;
   }
 
-
     public function drop($columns)
     {
         if (!$this->exists) {
@@ -383,11 +382,10 @@ public function attributesToArray()
 
         return $this->newQuery()->where(
         [
-          $this->getKeyName() => $this->getKey(),
-          $this->getRevisionAttributeName() => $this->getRevision()
+          $this->getKeyName()               => $this->getKey(),
+          $this->getRevisionAttributeName() => $this->getRevision(),
         ])->unset($columns);
     }
-
 
     public function fromDateTime($value)
     {
@@ -409,10 +407,12 @@ public function attributesToArray()
     {
         return $this->dateFormat ?: 'Y-m-d H:i:s';
     }
+
     /**
      * Determine if the given value is a standard CouchDB date format.
      *
-     * @param  string  $value
+     * @param string $value
+     *
      * @return bool
      */
     protected function isStandardCouchDBDateFormat($value)
@@ -421,7 +421,7 @@ public function attributesToArray()
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function push()
     {
@@ -435,7 +435,7 @@ public function attributesToArray()
             }
 
             // Do batch push by default.
-            if (! is_array($values)) {
+            if (!is_array($values)) {
                 $values = [$values];
             }
 
@@ -447,6 +447,7 @@ public function attributesToArray()
 
             $this->attributes['_rev'] = $response[0]['rev'];
             $this->syncOriginalAttribute('_rev');
+
             return $this;
         }
 
@@ -456,14 +457,15 @@ public function attributesToArray()
     /**
      * Remove one or more values from an array.
      *
-     * @param  string $column
-     * @param  mixed  $values
+     * @param string $column
+     * @param mixed  $values
+     *
      * @return mixed
      */
     public function pull($column, $values)
     {
         // Do batch pull by default.
-        if (! is_array($values)) {
+        if (!is_array($values)) {
             $values = [$values];
         }
 
@@ -475,15 +477,16 @@ public function attributesToArray()
 
         $this->attributes['_rev'] = $response[0]['rev'];
         $this->syncOriginalAttribute('_rev');
+
         return $this;
     }
 
     /**
      * Append one or more values to the underlying attribute value and sync with original.
      *
-     * @param  string $column
-     * @param  array  $values
-     * @param  bool   $unique
+     * @param string $column
+     * @param array  $values
+     * @param bool   $unique
      */
     protected function pushAttributeValues($column, array $values, $unique = false)
     {
@@ -506,8 +509,8 @@ public function attributesToArray()
     /**
      * Remove one or more values to the underlying attribute value and sync with original.
      *
-     * @param  string $column
-     * @param  array  $values
+     * @param string $column
+     * @param array  $values
      */
     protected function pullAttributeValues($column, array $values)
     {
@@ -527,7 +530,7 @@ public function attributesToArray()
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getForeignKey()
     {
@@ -535,7 +538,7 @@ public function attributesToArray()
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function __call($method, $parameters)
     {

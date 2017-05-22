@@ -40,12 +40,13 @@ class EmbedsMany extends EmbedsOneOrMany
     {
         // Generate a new key if needed.
        if ($model->getKeyName() == '_id' and !$model->getKey()) {
-            $model->setAttribute('_id', uniqid());
-        }
+           $model->setAttribute('_id', uniqid());
+       }
 
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
+
             return $this->parent->save() ? $model : false;
         }
 
@@ -87,14 +88,14 @@ class EmbedsMany extends EmbedsOneOrMany
 
         $entries = $this->parent->getOriginal($this->localKey);
 
-        foreach($entries as &$entry){
-          if($entry['_id']==$foreignKey){
-            $entry = $model->getAttributes();
-          }
+        foreach ($entries as &$entry) {
+            if ($entry['_id'] == $foreignKey) {
+                $entry = $model->getAttributes();
+            }
         }
 
         // Update document in database
-        $query = $this->getBaseQuery()->where($this->localKey,'elemmatch', [$model->getKeyName()=>$foreignKey]);
+        $query = $this->getBaseQuery()->where($this->localKey, 'elemmatch', [$model->getKeyName()=>$foreignKey]);
         $response = $query->update([$this->localKey=>$entries]);
         $result = current($response);
 

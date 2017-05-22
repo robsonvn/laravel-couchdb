@@ -2,11 +2,11 @@
 
 namespace Robsonvn\CouchDB\Query;
 
-use DateTime;
 use Closure;
+use DateTime;
 use Illuminate\Database\Query\Builder as BaseBuilder;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Collection;
 use Robsonvn\CouchDB\Connection;
 
 class Builder extends BaseBuilder
@@ -99,7 +99,6 @@ protected $conversion = [
     '>=' => '$gte',
 ];
 
-
     protected $useCollections;
 
     /**
@@ -153,7 +152,7 @@ protected $conversion = [
      */
     public function count($columns = ['*'])
     {
-      //TODO: add support to aggregate function
+        //TODO: add support to aggregate function
       return $this->get()->count();
     }
 
@@ -161,7 +160,6 @@ protected $conversion = [
     {
         return new self($this->connection, $this->processor);
     }
-
 
     /**
      * {@inheritdoc}
@@ -188,11 +186,9 @@ protected $conversion = [
         return parent::from($collection);
     }
 
-
     /**
      * {@inheritdoc}
      */
-
     public function find($id, $columns = ['*'])
     {
         return $this->where('_id', '=', $id)->first($columns);
@@ -215,27 +211,32 @@ protected $conversion = [
 
         return $response->status == 201;
     }
+
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    public function where($column, $operator = null, $value = null, $boolean = 'and'){
-      if(is_null($value) && $operator=='>='){
-        $this->wheres[] = [
-          'type'=>'Basic',
-          'operator'=>'>=',
-          'column'=>$column,
-          'value'=>null,
-          'boolean'=>$boolean
+    public function where($column, $operator = null, $value = null, $boolean = 'and')
+    {
+        if (is_null($value) && $operator == '>=') {
+            $this->wheres[] = [
+          'type'    => 'Basic',
+          'operator'=> '>=',
+          'column'  => $column,
+          'value'   => null,
+          'boolean' => $boolean,
 
         ];
-        return $this;
-      }
-      return parent::where($column, $operator, $value, $boolean);
+
+            return $this;
+        }
+
+        return parent::where($column, $operator, $value, $boolean);
     }
+
     /**
-    * Unfortunately, CouchDB require that the fields there are being ordained must be on selector clausure
-    * For those who aren't being select, let's add a selector field >= null
-    */
+     * Unfortunately, CouchDB require that the fields there are being ordained must be on selector clausure
+     * For those who aren't being select, let's add a selector field >= null.
+     */
     protected function addWhereGreaterThanNullForOrdersField()
     {
         if (is_array($this->orders)) {
@@ -244,14 +245,14 @@ protected $conversion = [
                 //search if exist any filter for this field
                 if (is_array($this->wheres)) {
                     foreach ($this->wheres as $where) {
-                        if ($where['column']==$field) {
+                        if ($where['column'] == $field) {
                             $exists = true;
                             continue;
                         }
                     }
                 }
-                if(!$exists){
-                  $this->where($field, '>=', null);
+                if (!$exists) {
+                    $this->where($field, '>=', null);
                 }
             }
         }
@@ -275,7 +276,7 @@ protected $conversion = [
 
         $index = null;
         $skip = ($this->offset) ?: 0;
-        $sort = ($this->orders) ? [$this->orders]: [];
+        $sort = ($this->orders) ? [$this->orders] : [];
 
         //Sorry about this, but CouchDB limit is 25 by default
         //TODO CREATE A DRIVER CURSOR TO AVOID THIS SHIT
@@ -285,7 +286,7 @@ protected $conversion = [
 
         //Create a global try catch for on couchdb driver
         if ($results->status != 200) {
-            if ($results->status==500) {
+            if ($results->status == 500) {
                 throw new \Exception('IndexError, no-index or no matching fields order/selector');
             }
           //TODO improve this exception
@@ -317,7 +318,7 @@ protected $conversion = [
             $type = 'string';
         } else {
             $type = gettype($value);
-            $type = (in_array($type, ['integer','double']) ? 'number' : $type);
+            $type = (in_array($type, ['integer', 'double']) ? 'number' : $type);
         }
 
         return $type;
@@ -331,7 +332,7 @@ protected $conversion = [
     protected function compileWheres()
     {
         // The wheres to compile.
-        $wheres = is_array($this->wheres )? $this->wheres : [];
+        $wheres = is_array($this->wheres) ? $this->wheres : [];
 
         // We will add all compiled wheres to this array.
         $compiled = [];
@@ -340,16 +341,16 @@ protected $conversion = [
         //and any letter as greater than an integer
         //to avoid unexpected results, let's specify what type of value we're querying
         foreach ($wheres as $where) {
-            if (isset($where['operator']) && in_array($where['operator'], ['>','>=','<','<='])) {
+            if (isset($where['operator']) && in_array($where['operator'], ['>', '>=', '<', '<='])) {
                 $value_type = $this->getDatabaseEquivalentDataType($where['value']);
 
-                if (in_array($value_type, ['boolean','number','string'])) {
+                if (in_array($value_type, ['boolean', 'number', 'string'])) {
                     $wheres[] = [
-                'type'=> $where['type'],
+                'type'     => $where['type'],
                 'operator' => 'type',
-                'column' => $where['column'],
-                'boolean' => 'and',
-                'value' => $value_type,
+                'column'   => $where['column'],
+                'boolean'  => 'and',
+                'value'    => $value_type,
               ];
                 }
             }
@@ -437,8 +438,7 @@ protected $conversion = [
         extract($where);
 
         // Replace like with a Regex instance.
-        if (in_array($operator, ['like','not like','ilike','not ilike'])) {
-
+        if (in_array($operator, ['like', 'not like', 'ilike', 'not ilike'])) {
 
             // Convert to regular expression.
             $regex = preg_replace('#(^|[^\\\])%#', '$1.*', preg_quote($value));
@@ -454,7 +454,7 @@ protected $conversion = [
             //add case insensitive modifier for ilike operation
             $value = (ends_with($operator, 'ilike')) ? '(?i)'.$regex : $regex;
 
-            $operator = preg_replace("/(i|)(like)/", 'regex', $operator);
+            $operator = preg_replace('/(i|)(like)/', 'regex', $operator);
         }
 
         // Manipulate negative regexp operations.
@@ -560,15 +560,15 @@ protected function compileWhereRaw(array $where)
                   ],
               ],
             $column => [
-              '$type'=>$value_type
-            ]
+              '$type'=> $value_type,
+            ],
           ];
       } else {
           return [
               $column => [
                   '$gte' => $values[0],
                   '$lte' => $values[1],
-                  '$type'=>$value_type
+                  '$type'=> $value_type,
               ],
           ];
       }
@@ -590,8 +590,9 @@ protected function compileWhereRaw(array $where)
 
       return $this->collection->DeleteMany($wheres);
   }
-    /**
-   * @inheritdoc
+
+  /**
+   * {@inheritdoc}
    */
   public function raw($expression = null)
   {
@@ -599,7 +600,7 @@ protected function compileWhereRaw(array $where)
       if ($expression instanceof Closure) {
           return call_user_func($expression, $this->collection);
       } // Create an expression for the given value
-      elseif (! is_null($expression)) {
+      elseif (!is_null($expression)) {
           return new Expression($expression);
       }
 
@@ -608,7 +609,7 @@ protected function compileWhereRaw(array $where)
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function whereBetween($column, array $values, $boolean = 'and', $not = false)
   {
@@ -618,14 +619,15 @@ protected function compileWhereRaw(array $where)
 
       return $this;
   }
+
   /**
- * @inheritdoc
- */
+   * {@inheritdoc}
+   */
   public function orderBy($column, $direction = 'asc')
   {
       $direction = strtolower($direction);
 
-      if (in_array($direction, ['asc','desc'])) {
+      if (in_array($direction, ['asc', 'desc'])) {
           $this->orders[$column] = $direction;
       }
 
@@ -633,22 +635,23 @@ protected function compileWhereRaw(array $where)
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function exists()
   {
-      return ! is_null($this->first());
+      return !is_null($this->first());
   }
 
   /**
- * Remove one or more fields.
- *
- * @param  mixed $columns
- * @return int
- */
+   * Remove one or more fields.
+   *
+   * @param mixed $columns
+   *
+   * @return int
+   */
   public function drop($columns)
   {
-      if (! is_array($columns)) {
+      if (!is_array($columns)) {
           $columns = [$columns];
       }
 
@@ -667,6 +670,7 @@ protected function compileWhereRaw(array $where)
    * @param mixed $column
    * @param mixed $value
    * @param bool  $unique
+   *
    * @return int
    */
   public function push($column, $value = null, $unique = false)
@@ -688,11 +692,12 @@ protected function compileWhereRaw(array $where)
       return $this->performUpdate([], $query);
   }
 
-   /**
+  /**
    * Remove one or more values from an array.
    *
-   * @param  mixed $column
-   * @param  mixed $value
+   * @param mixed $column
+   * @param mixed $value
+   *
    * @return int
    */
   public function pull($column, $value = null)
@@ -709,13 +714,13 @@ protected function compileWhereRaw(array $where)
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function increment($column, $amount = 1, array $extra = [], array $options = [])
   {
       $query = ['$inc' => [$column => $amount]];
 
-      if (! empty($extra)) {
+      if (!empty($extra)) {
           $query['$set'] = $extra;
       }
 
@@ -726,21 +731,19 @@ protected function compileWhereRaw(array $where)
           $query->orWhereNotNull($column);
       });
 
-
       return $this->performUpdate($query, $options);
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function decrement($column, $amount = 1, array $extra = [], array $options = [])
   {
       return $this->increment($column, -1 * $amount, $extra, $options);
   }
 
-
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function __call($method, $parameters)
   {

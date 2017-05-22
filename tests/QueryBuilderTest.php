@@ -10,7 +10,7 @@ class QueryBuilderTest extends TestCase
 
     public function testDeleteWithId()
     {
-        list($user_id,$rev) = DB::collection('users')->insertGetId([
+        list($user_id, $rev) = DB::collection('users')->insertGetId([
             ['name' => 'Jane Doe', 'age' => 20],
         ]);
 
@@ -50,7 +50,7 @@ class QueryBuilderTest extends TestCase
         $users = DB::collection('users')->get();
         $this->assertEquals(0, count($users));
 
-        DB::collection('users')->insert(['name' => 'John Doe','id'=>'test']);
+        DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
 
         $users = DB::collection('users')->get();
         $this->assertEquals(1, count($users));
@@ -73,7 +73,7 @@ class QueryBuilderTest extends TestCase
         DB::collection('users')->insert([
             'tags' => ['tag1', 'tag2'],
             'name' => 'John Doe',
-            'id' => 'test'
+            'id'   => 'test',
         ]);
 
         $users = DB::collection('users')->get();
@@ -89,7 +89,7 @@ class QueryBuilderTest extends TestCase
         $response = DB::collection('users')->insertGetId(['name' => 'John Doe']);
 
         $this->assertTrue(is_array($response));
-        $this->assertEquals(2,count($response));
+        $this->assertEquals(2, count($response));
     }
 
     public function testBatchInsert()
@@ -112,7 +112,7 @@ class QueryBuilderTest extends TestCase
 
     public function testFind()
     {
-        list($id,$rev) = DB::collection('users')->insertGetId(['name' => 'John Doe']);
+        list($id, $rev) = DB::collection('users')->insertGetId(['name' => 'John Doe']);
 
         $user = DB::collection('users')->find($id);
 
@@ -167,7 +167,7 @@ class QueryBuilderTest extends TestCase
 
     public function testTruncate()
     {
-        DB::collection('users')->insert(['name' => 'John Doe','id'=>'5']);
+        DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'5']);
         DB::collection('users')->truncate();
         $this->assertEquals(0, DB::collection('users')->count());
     }
@@ -219,7 +219,6 @@ class QueryBuilderTest extends TestCase
             return $collection->find(['age' => 20]);
         });
 
-
         $this->assertInstanceOf('Doctrine\CouchDB\HTTP\Response', $response);
         $this->assertEquals(1, count($response->body['docs']));
 
@@ -236,7 +235,7 @@ class QueryBuilderTest extends TestCase
 
     public function testPush()
     {
-        list($id,$rev) = DB::collection('users')->insertGetId([
+        list($id, $rev) = DB::collection('users')->insertGetId([
             'name'     => 'John Doe',
             'tags'     => [],
             'messages' => [],
@@ -255,23 +254,23 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals('tag2', $user['tags'][1]);
 
         //Add inexistent array
-        DB::collection('users')->where('_id', $id)->push('privileges', ['admin','supervisor']);
+        DB::collection('users')->where('_id', $id)->push('privileges', ['admin', 'supervisor']);
         $user = DB::collection('users')->find($id);
-        $this->assertEquals(true,is_array($user['privileges']));
+        $this->assertEquals(true, is_array($user['privileges']));
         $this->assertEquals(2, count($user['privileges']));
         $this->assertEquals('admin', $user['privileges'][0]);
 
         //Add inexistent array
         DB::collection('users')->where('_id', $id)->push('roles', 'admin');
         $user = DB::collection('users')->find($id);
-        $this->assertEquals(true,is_array($user['roles']));
+        $this->assertEquals(true, is_array($user['roles']));
         $this->assertEquals(1, count($user['roles']));
         $this->assertEquals('admin', $user['roles'][0]);
 
         //Add inexistent array duplicated unique
-        DB::collection('users')->where('_id', $id)->push('skills', ['php','php','css'],true);
+        DB::collection('users')->where('_id', $id)->push('skills', ['php', 'php', 'css'], true);
         $user = DB::collection('users')->find($id);
-        $this->assertEquals(true,is_array($user['skills']));
+        $this->assertEquals(true, is_array($user['skills']));
         $this->assertEquals(2, count($user['skills']));
         $this->assertEquals('css', $user['skills'][1]);
 
@@ -286,7 +285,7 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(3, count($user['tags']));
 
         //Add unique duplicated
-        DB::collection('users')->where('_id', $id)->push('tags', ['tag1','tag1'], true);
+        DB::collection('users')->where('_id', $id)->push('tags', ['tag1', 'tag1'], true);
         $user = DB::collection('users')->find($id);
         $this->assertEquals(3, count($user['tags']));
         $message = ['from' => 'Jane', 'body' => 'Hi John'];
@@ -313,18 +312,17 @@ class QueryBuilderTest extends TestCase
         $message1 = ['from' => 'Jane', 'body' => 'Hi John'];
         $message2 = ['from' => 'Mark', 'body' => 'Hi John'];
 
-        list($id,$rev) = DB::collection('users')->insertGetId([
+        list($id, $rev) = DB::collection('users')->insertGetId([
             'name'     => 'John Doe',
             'tags'     => ['tag1', 'tag2', 'tag3', 'tag4'],
             'messages' => [$message1, $message2],
         ]);
 
-
         $response = DB::collection('users')->where('_id', $id)->pull('tags', ['tag3']);
 
-        $this->assertEquals(1,$response[0]['ok']);
-        $this->assertEquals($id,$response[0]['id']);
-        $this->assertNotEquals($rev,$response[0]['rev']);
+        $this->assertEquals(1, $response[0]['ok']);
+        $this->assertEquals($id, $response[0]['id']);
+        $this->assertNotEquals($rev, $response[0]['rev']);
 
         $user = DB::collection('users')->find($id);
         $this->assertTrue(is_array($user['tags']));
@@ -392,10 +390,10 @@ class QueryBuilderTest extends TestCase
     public function testTake()
     {
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34 ,'id'=>'15'],
-            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20 ,'id'=>'16'],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 14 ,'id'=>'17'],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 3 ,'id'=>'20'],
+            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34, 'id'=>'15'],
+            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20, 'id'=>'16'],
+            ['name' => 'spoon', 'type' => 'round', 'amount' => 14, 'id'=>'17'],
+            ['name' => 'spoon', 'type' => 'round', 'amount' => 3, 'id'=>'20'],
         ]);
 
         $this->createIndex('name');
@@ -514,8 +512,8 @@ class QueryBuilderTest extends TestCase
 
     public function testUnset()
     {
-        list($id1,$rev) = DB::collection('users')->insertGetId(['name' => 'John Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
-        list($id2,$rev) = DB::collection('users')->insertGetId(['name' => 'Jane Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
+        list($id1, $rev) = DB::collection('users')->insertGetId(['name' => 'John Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
+        list($id2, $rev) = DB::collection('users')->insertGetId(['name' => 'Jane Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
 
         DB::collection('users')->where('name', 'John Doe')->unset('note1');
 
@@ -535,24 +533,23 @@ class QueryBuilderTest extends TestCase
         $this->assertFalse(isset($user2['note2']));
     }
 
-
     public function testDates()
     {
         DB::collection('users')->insert([
-            ['name' => 'John Doe', 'birthday' => "1980-01-01 00:00:00"],
-            ['name' => 'Jane Doe', 'birthday' => "1981-01-01 00:00:00"],
-            ['name' => 'Robert Roe', 'birthday' => "1982-01-01 00:00:00"],
-            ['name' => 'Mark Moe', 'birthday' => "1983-01-01 00:00:00"],
+            ['name' => 'John Doe', 'birthday' => '1980-01-01 00:00:00'],
+            ['name' => 'Jane Doe', 'birthday' => '1981-01-01 00:00:00'],
+            ['name' => 'Robert Roe', 'birthday' => '1982-01-01 00:00:00'],
+            ['name' => 'Mark Moe', 'birthday' => '1983-01-01 00:00:00'],
         ]);
 
-        $user = DB::collection('users')->where('birthday', "1980-01-01 00:00:00")->first();
+        $user = DB::collection('users')->where('birthday', '1980-01-01 00:00:00')->first();
         $this->assertEquals('John Doe', $user['name']);
 
-        $user = DB::collection('users')->where('birthday', '=', "1980-01-01 00:00:00")->first();
+        $user = DB::collection('users')->where('birthday', '=', '1980-01-01 00:00:00')->first();
         $this->assertEquals('John Doe', $user['name']);
 
-        $start = "1981-01-01 00:00:00";
-        $stop = "1982-01-01 00:00:00";
+        $start = '1981-01-01 00:00:00';
+        $stop = '1982-01-01 00:00:00';
 
         $users = DB::collection('users')->whereBetween('birthday', [$start, $stop])->get();
         $this->assertEquals(2, count($users));
@@ -606,13 +603,11 @@ class QueryBuilderTest extends TestCase
         $results = DB::collection('items')->where('tags', 'size', 2)->get();
         $this->assertEquals(2, count($results));
 
-
         $results = DB::collection('items')->where('tags', 'size', 3)->get();
         $this->assertEquals(0, count($results));
 
         $results = DB::collection('items')->where('tags', 'size', 4)->get();
         $this->assertEquals(1, count($results));
-
 
         $results = DB::collection('users')->where('name', 'regex', '(?i).*doe$')->get();
         $this->assertEquals(2, count($results));
@@ -710,28 +705,28 @@ class QueryBuilderTest extends TestCase
             $this->assertEquals(1, count($result['tags']));
         }
     }
-    public function createIndex($index){
 
-      if(!is_array($index)){
-        $index = [$index];
-      }
+    public function createIndex($index)
+    {
+        if (!is_array($index)) {
+            $index = [$index];
+        }
 
       //Create index
       $connection = DB::connection('couchdb');
-      $client = $connection->getCouchDBClient();
+        $client = $connection->getCouchDBClient();
 
-      $httpClient = $client->getHttpClient();
+        $httpClient = $client->getHttpClient();
 
-      $index[] = 'doc_collection';
+        $index[] = 'doc_collection';
 
-      $params = [
-        "index" => [
-            "fields"=> $index
+        $params = [
+        'index' => [
+            'fields'=> $index,
         ],
-        "name" => implode('_',$index)
+        'name' => implode('_', $index),
       ];
 
-      $response = $httpClient->request('POST','/'.$client->getDatabase().'/_index',json_encode($params));
-
+        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
     }
 }
