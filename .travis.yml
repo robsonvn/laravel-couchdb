@@ -1,4 +1,6 @@
 language: php
+dist: trusty
+sudo: required
 
 php:
   - 5.6
@@ -21,3 +23,4 @@ script: vendor/bin/phpunit --coverage-clover=coverage.xml
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
+git
