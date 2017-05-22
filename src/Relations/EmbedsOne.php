@@ -43,6 +43,7 @@ class EmbedsOne extends EmbedsOneOrMany
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
+
             return $this->parent->save() ? $model : false;
         }
 

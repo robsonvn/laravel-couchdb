@@ -23,13 +23,13 @@ class EmbeddedRelationsTest extends TestCase
         $address = new Address(['city' => 'London']);
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.creating: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.created: ' . get_class($address), $address);
-        $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($address), $address);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.creating: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.created: '.get_class($address), $address);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($address), $address);
 
         $address = $user->addresses()->save($address);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $address->unsetEventDispatcher();
 
@@ -44,23 +44,23 @@ class EmbeddedRelationsTest extends TestCase
         $last_user_rev = $user->getRevision();
         $address = $user->addresses()->save(new Address(['city' => 'Paris']));
 
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $user = User::find($user->_id);
         $this->assertEquals(['London', 'Paris'], $user->addresses->pluck('city')->all());
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.updating: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.updated: ' . get_class($address), $address);
-        $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($address), $address);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.updating: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.updated: '.get_class($address), $address);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($address), $address);
 
         $last_user_rev = $user->getRevision();
         $address->city = 'New York';
         $user->addresses()->save($address);
         $address->unsetEventDispatcher();
 
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
         $this->assertEquals(2, count($user->addresses));
         $this->assertEquals(2, count($user->addresses()->get()));
         $this->assertEquals(2, $user->addresses->count());
@@ -83,16 +83,16 @@ class EmbeddedRelationsTest extends TestCase
         $last_user_rev = $user->getRevision();
         $user->addresses()->save(new Address(['city' => 'Bruxelles']));
         $this->assertEquals(['London', 'New York', 'Bruxelles'], $user->addresses->pluck('city')->all());
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $freshUser = User::find($user->_id);
         $this->assertEquals(['London', 'New York', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
 
         $address = $user->addresses[1];
         $last_user_rev = $user->getRevision();
-        $address->city = "Manhattan";
+        $address->city = 'Manhattan';
         $user->addresses()->save($address);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $this->assertEquals(['London', 'Manhattan', 'Bruxelles'], $user->addresses->pluck('city')->all());
 
@@ -129,7 +129,7 @@ class EmbeddedRelationsTest extends TestCase
         $user = User::create(['name' => 'John Doe']);
         $last_user_rev = $user->getRevision();
         $user->addresses()->saveMany([new Address(['city' => 'London']), new Address(['city' => 'Bristol'])]);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $array = $user->toArray();
         $this->assertFalse(array_key_exists('_addresses', $array));
@@ -218,7 +218,6 @@ class EmbeddedRelationsTest extends TestCase
 
     public function testEmbedsManyDestroy()
     {
-
         $this->markTestSkipped('not implemented yet');
 
         $user = User::create(['name' => 'John Doe']);
@@ -227,8 +226,8 @@ class EmbeddedRelationsTest extends TestCase
         $address = $user->addresses->first();
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.deleting: ' . get_class($address), Mockery::type('Address'))->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.deleted: ' . get_class($address), Mockery::type('Address'));
+        $events->shouldReceive('until')->once()->with('eloquent.deleting: '.get_class($address), Mockery::type('Address'))->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.deleted: '.get_class($address), Mockery::type('Address'));
 
         $user->addresses()->destroy($address->_id);
         $this->assertEquals(['Bristol', 'Bruxelles'], $user->addresses->pluck('city')->all());
@@ -267,8 +266,8 @@ class EmbeddedRelationsTest extends TestCase
         $address = $user->addresses->first();
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.deleting: ' . get_class($address), Mockery::type('Address'))->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.deleted: ' . get_class($address), Mockery::type('Address'));
+        $events->shouldReceive('until')->once()->with('eloquent.deleting: '.get_class($address), Mockery::type('Address'))->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.deleted: '.get_class($address), Mockery::type('Address'));
 
         $address->delete();
 
@@ -315,8 +314,8 @@ class EmbeddedRelationsTest extends TestCase
         $address = new Address(['city' => 'London']);
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.creating: ' . get_class($address), $address)->andReturn(false);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.creating: '.get_class($address), $address)->andReturn(false);
 
         $this->assertFalse($user->addresses()->save($address));
         $address->unsetEventDispatcher();
@@ -329,7 +328,7 @@ class EmbeddedRelationsTest extends TestCase
         $address->exists = true;
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(false);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(false);
 
         $this->assertFalse($user->addresses()->save($address));
         $address->unsetEventDispatcher();
@@ -342,8 +341,8 @@ class EmbeddedRelationsTest extends TestCase
         $user->addresses()->save($address);
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.updating: ' . get_class($address), $address)->andReturn(false);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.updating: '.get_class($address), $address)->andReturn(false);
 
         $address->city = 'Warsaw';
 
@@ -359,7 +358,7 @@ class EmbeddedRelationsTest extends TestCase
         $address = $user->addresses->first();
 
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.deleting: ' . get_class($address), Mockery::mustBe($address))->andReturn(false);
+        $events->shouldReceive('until')->once()->with('eloquent.deleting: '.get_class($address), Mockery::mustBe($address))->andReturn(false);
 
         $this->assertEquals(0, $user->addresses()->destroy($address));
         $this->assertEquals(['New York'], $user->addresses->pluck('city')->all());
@@ -462,10 +461,10 @@ class EmbeddedRelationsTest extends TestCase
         $father = new User(['name' => 'Mark Doe']);
 
         $father->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.creating: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.created: ' . get_class($father), $father);
-        $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($father), $father);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.creating: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.created: '.get_class($father), $father);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($father), $father);
 
         $father = $user->father()->save($father);
         $father->unsetEventDispatcher();
@@ -480,10 +479,10 @@ class EmbeddedRelationsTest extends TestCase
         $raw = $father->getAttributes();
 
         $father->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.updating: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.updated: ' . get_class($father), $father);
-        $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($father), $father);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.updating: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.updated: '.get_class($father), $father);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($father), $father);
 
         $father->name = 'Tom Doe';
         $user->father()->save($father);
@@ -495,10 +494,10 @@ class EmbeddedRelationsTest extends TestCase
         $father = new User(['name' => 'Jim Doe']);
 
         $father->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('until')->once()->with('eloquent.creating: ' . get_class($father), $father)->andReturn(true);
-        $events->shouldReceive('fire')->once()->with('eloquent.created: ' . get_class($father), $father);
-        $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($father), $father);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.creating: '.get_class($father), $father)->andReturn(true);
+        $events->shouldReceive('fire')->once()->with('eloquent.created: '.get_class($father), $father);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($father), $father);
 
         $father = $user->father()->save($father);
         $father->unsetEventDispatcher();
@@ -513,7 +512,7 @@ class EmbeddedRelationsTest extends TestCase
         $father = new User(['name' => 'Mark Doe']);
 
         $father->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-        $events->shouldReceive('until')->times(0)->with('eloquent.saving: ' . get_class($father), $father);
+        $events->shouldReceive('until')->times(0)->with('eloquent.saving: '.get_class($father), $father);
 
         $father = $user->father()->associate($father);
         $father->unsetEventDispatcher();
@@ -591,27 +590,25 @@ class EmbeddedRelationsTest extends TestCase
 
         $last_user_rev = $user->getRevision();
         $father = $user->father()->create(['name' => 'Mark Doe']);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $last_user_rev = $user->getRevision();
         $grandfather = $father->father()->create(['name' => 'Steve Doe']);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $last_user_rev = $user->getRevision();
         $greatgrandfather = $grandfather->father()->create(['name' => 'Tom Doe']);
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
-
-
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $last_user_rev = $user->getRevision();
         $user->name = 'Tim Doe';
         $user->save();
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $last_user_rev = $user->getRevision();
         $father->name = 'Sven Doe';
         $father->save();
-        $this->assertNotEquals($last_user_rev,$user->getRevision());
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $greatgrandfather->name = 'Ron Doe';
         $greatgrandfather->save();
@@ -697,7 +694,7 @@ class EmbeddedRelationsTest extends TestCase
     public function testSaveEmptyModel()
     {
         $user = User::create(['name' => 'John Doe']);
-        $user->addresses()->save(new Address);
+        $user->addresses()->save(new Address());
         $this->assertNotNull($user->addresses);
         $this->assertEquals(1, $user->addresses()->count());
     }

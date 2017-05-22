@@ -55,14 +55,16 @@ class QueryTest extends TestCase
         $this->assertEquals(2, count($users));
     }
 
-    public function testRegex(){
-      $users = User::where('name', 'regex', '(?i).*doe$')->get();
-      $this->assertEquals(2, count($users));
+    public function testRegex()
+    {
+        $users = User::where('name', 'regex', '(?i).*doe$')->get();
+        $this->assertEquals(2, count($users));
     }
 
-    public function testNotRegex(){
-      $users = User::where('name', 'not regex', '(?i).*doe$')->get();
-      $this->assertEquals(7, count($users));
+    public function testNotRegex()
+    {
+        $users = User::where('name', 'not regex', '(?i).*doe$')->get();
+        $this->assertEquals(7, count($users));
     }
 
     public function testLike()
@@ -211,14 +213,13 @@ class QueryTest extends TestCase
         $httpClient = $client->getHttpClient();
 
         $params = [
-          "index" => [
-              "fields"=> ["age","doc_collection"]
+          'index' => [
+              'fields'=> ['age', 'doc_collection'],
           ],
-          "name" => "age_index"
+          'name' => 'age_index',
         ];
 
-        $response = $httpClient->request('POST','/'.$client->getDatabase().'/_index',json_encode($params));
-
+        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
 
         $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
         $this->assertEquals(13, $user->age);
@@ -228,7 +229,6 @@ class QueryTest extends TestCase
 
         $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
         $this->assertEquals(37, $user->age);
-
     }
 
     public function testGroupBy()
@@ -314,12 +314,12 @@ class QueryTest extends TestCase
         $this->assertEquals(3, $users->count());
 
         $users = User::where(function ($query) {
-                    $query->where('name', 'Harry Hoe')
+            $query->where('name', 'Harry Hoe')
                           ->orWhere(function ($query) {
                               $query->where('age', '>', 15)
                                     ->where('title', '<>', 'admin');
                           });
-                })
+        })
                 ->get();
 
         $this->assertEquals(5, $users->count());

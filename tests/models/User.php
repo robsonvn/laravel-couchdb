@@ -10,7 +10,7 @@ class User extends Eloquent implements AuthenticatableContract, CanResetPassword
 {
     use Authenticatable, CanResetPassword;
 
-    protected $dates = ['birthday', 'entry.date','entry.logs.log_date','entry.logs.insane_tests.date','entry.extreme_insane_test.dates.danger_date'];
+    protected $dates = ['birthday', 'entry.date', 'entry.logs.log_date', 'entry.logs.insane_tests.date', 'entry.extreme_insane_test.dates.danger_date'];
     protected static $unguarded = true;
     protected $dateFormat = 'l jS \of F Y h:i:s A';
 

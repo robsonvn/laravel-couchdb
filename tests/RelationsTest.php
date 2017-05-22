@@ -532,28 +532,27 @@ class RelationsTest extends TestCase
         $this->assertEquals([$client->_id], $user->client_ids);
     }
 
-    public function createIndex($index){
-
-      if(!is_array($index)){
-        $index = [$index];
-      }
+    public function createIndex($index)
+    {
+        if (!is_array($index)) {
+            $index = [$index];
+        }
 
       //Create index
       $connection = DB::connection('couchdb');
-      $client = $connection->getCouchDBClient();
+        $client = $connection->getCouchDBClient();
 
-      $httpClient = $client->getHttpClient();
+        $httpClient = $client->getHttpClient();
 
-      $index[] = 'doc_collection';
+        $index[] = 'doc_collection';
 
-      $params = [
-        "index" => [
-            "fields"=> $index
+        $params = [
+        'index' => [
+            'fields'=> $index,
         ],
-        "name" => implode('_',$index)
+        'name' => implode('_', $index),
       ];
 
-      $response = $httpClient->request('POST','/'.$client->getDatabase().'/_index',json_encode($params));
-
+        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
     }
 }

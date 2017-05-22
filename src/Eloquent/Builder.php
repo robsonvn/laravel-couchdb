@@ -5,7 +5,6 @@ namespace Robsonvn\CouchDB\Eloquent;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
-
 class Builder extends EloquentBuilder
 {
     protected $model;
@@ -37,6 +36,7 @@ class Builder extends EloquentBuilder
       // to the parent relation instance.
       if ($relation = $this->model->getParentRelation()) {
           $relation->performInsert($this->model, $values);
+
           return true;
       }
 
@@ -53,7 +53,7 @@ class Builder extends EloquentBuilder
       if ($relation = $this->model->getParentRelation()) {
           $relation->performInsert($this->model, $values);
 
-          return [$this->model->getKey(),null];
+          return [$this->model->getKey(), null];
       }
 
       return parent::insertGetId($values, $sequence);
@@ -74,28 +74,28 @@ class Builder extends EloquentBuilder
 
       return parent::delete();
   }
+
   /**
- * @inheritdoc
- */
+   * {@inheritdoc}
+   */
   public function raw($expression = null)
   {
-    // Get raw results from the query builder.
+      // Get raw results from the query builder.
     $results = $this->query->raw($expression);
 
-    if(is_array($results) and array_key_exists('_id', $results)) {
-        return $this->model->newFromBuilder((array) $results);
-    }
+      if (is_array($results) and array_key_exists('_id', $results)) {
+          return $this->model->newFromBuilder((array) $results);
+      }
 
-    if($results instanceof \Doctrine\CouchDB\HTTP\Response){
-      return $this->model->hydrate($results->body['docs']);
-    }
+      if ($results instanceof \Doctrine\CouchDB\HTTP\Response) {
+          return $this->model->hydrate($results->body['docs']);
+      }
 
-    return $results;
+      return $results;
   }
 
-
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
@@ -119,8 +119,8 @@ class Builder extends EloquentBuilder
         return parent::increment($column, $amount, $extra);
     }
 
-    /**
-   * @inheritdoc
+  /**
+   * {@inheritdoc}
    */
   public function decrement($column, $amount = 1, array $extra = [])
   {
@@ -142,15 +142,18 @@ class Builder extends EloquentBuilder
       return parent::decrement($column, $amount, $extra);
   }
 
-  public function push($column, $values, $unique = false){
-    return $this->query->push($column, $values, $unique);
-  }
+    public function push($column, $values, $unique = false)
+    {
+        return $this->query->push($column, $values, $unique);
+    }
 
-  public function pull($column, $values){
-    return $this->query->pull($column, $values);
-  }
+    public function pull($column, $values)
+    {
+        return $this->query->pull($column, $values);
+    }
+
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   protected function addHasWhere(EloquentBuilder $hasQuery, Relation $relation, $operator, $count, $boolean)
   {
@@ -187,7 +190,7 @@ class Builder extends EloquentBuilder
 
       // If we are comparing to 0, we need an additional $not flip.
       if ($count == 0) {
-          $not = ! $not;
+          $not = !$not;
       }
 
       // All related ids.
