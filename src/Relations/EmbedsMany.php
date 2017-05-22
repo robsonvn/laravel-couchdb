@@ -52,17 +52,16 @@ class EmbedsMany extends EmbedsOneOrMany
 
         // Push the new model to the database.
         $result = $this->getBaseQuery()->push($this->localKey, $model->getAttributes(), true);
-
         $result = current($result);
-
-        //Reload parent values
-        $this->parent->fill($this->parent->fresh()->getAttributes());
-        $this->parent->syncOriginal();
 
         // Attach the model to its parent.
         if ($result['ok']) {
             $this->associate($model);
         }
+
+        //Reload parent values
+        $this->parent->fill($this->parent->fresh()->getAttributes());
+        $this->parent->syncOriginal();
 
         return $result ? $model : false;
     }
@@ -88,6 +87,7 @@ class EmbedsMany extends EmbedsOneOrMany
 
         $entries = $this->parent->getOriginal($this->localKey);
 
+        //update array with the new data
         foreach ($entries as &$entry) {
             if ($entry['_id'] == $foreignKey) {
                 $entry = $model->getAttributes();
@@ -99,14 +99,16 @@ class EmbedsMany extends EmbedsOneOrMany
         $response = $query->update([$this->localKey=>$entries]);
         $result = current($response);
 
-        //Reload parent values
-        $this->parent->fill($this->parent->fresh()->getAttributes());
-        $this->parent->syncOriginal();
 
         // Attach the model to its parent.
         if ($result['ok']) {
             $this->associate($model);
         }
+
+        //Reload parent values
+        //Where we need to get the data from the database because for now we don't have the successful response status
+        $this->parent->fill($this->parent->fresh()->getAttributes());
+        $this->parent->syncOriginal();
 
         return $result ? $model : false;
     }
@@ -130,15 +132,18 @@ class EmbedsMany extends EmbedsOneOrMany
         // Get the correct foreign key value.
         $foreignKey = $this->getForeignKeyValue($model);
 
-        $result = $this->getBaseQuery()->pull($this->localKey, [$model->getKeyName() => $foreignKey]);
+        $entries = $this->parent->getOriginal($this->localKey);
 
+        $result = $this->getBaseQuery()->pull($this->localKey, $model->getAttributes());
         $result = current($result);
-        //update parent rev
-        $this->parent->setAttribute($this->parent->getRevisionAttributeName(), $result['rev']);
 
         if ($result['ok']) {
             $this->dissociate($model);
         }
+
+        //update parent rev
+        $this->parent->setAttribute($this->parent->getRevisionAttributeName(), $result['rev']);
+        $this->parent->syncOriginal();
 
         return $result;
     }

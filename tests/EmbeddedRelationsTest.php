@@ -5,7 +5,6 @@ class EmbeddedRelationsTest extends TestCase
     public function tearDown()
     {
         Mockery::close();
-
         User::truncate();
         Book::truncate();
         Item::truncate();
@@ -101,29 +100,6 @@ class EmbeddedRelationsTest extends TestCase
         $this->assertEquals(['London', 'Manhattan', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
     }
 
-    // public function testEmbedsManySaveModel()
-    // {
-    //     $user = User::create(['name' => 'John Doe']);
-    //     $address = new Address(['city' => 'London']);
-
-    //     $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-    //     $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-    //     $events->shouldReceive('until')->once()->with('eloquent.creating: ' . get_class($address), $address)->andReturn(true);
-    //     $events->shouldReceive('fire')->once()->with('eloquent.created: ' . get_class($address), $address);
-    //     $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($address), $address);
-
-    //     $address->save();
-
-    //     $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
-    //     $events->shouldReceive('until')->once()->with('eloquent.saving: ' . get_class($address), $address)->andReturn(true);
-    //     $events->shouldReceive('until')->once()->with('eloquent.updating: ' . get_class($address), $address)->andReturn(true);
-    //     $events->shouldReceive('fire')->once()->with('eloquent.updated: ' . get_class($address), $address);
-    //     $events->shouldReceive('fire')->once()->with('eloquent.saved: ' . get_class($address), $address);
-
-    //     $address->city = 'Paris';
-    //     $address->save();
-    // }
-
     public function testEmbedsToArray()
     {
         $user = User::create(['name' => 'John Doe']);
@@ -218,10 +194,10 @@ class EmbeddedRelationsTest extends TestCase
 
     public function testEmbedsManyDestroy()
     {
-        $this->markTestSkipped('not implemented yet');
-
         $user = User::create(['name' => 'John Doe']);
+        $last_user_rev = $user->getRevision();
         $user->addresses()->saveMany([new Address(['city' => 'London']), new Address(['city' => 'Bristol']), new Address(['city' => 'Bruxelles'])]);
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
 
         $address = $user->addresses->first();
 
@@ -229,20 +205,24 @@ class EmbeddedRelationsTest extends TestCase
         $events->shouldReceive('until')->once()->with('eloquent.deleting: '.get_class($address), Mockery::type('Address'))->andReturn(true);
         $events->shouldReceive('fire')->once()->with('eloquent.deleted: '.get_class($address), Mockery::type('Address'));
 
+        $last_user_rev = $user->getRevision();
         $user->addresses()->destroy($address->_id);
+        $this->assertNotEquals($last_user_rev, $user->getRevision());
         $this->assertEquals(['Bristol', 'Bruxelles'], $user->addresses->pluck('city')->all());
+        $freshUser = User::find($user->id);
+          $this->assertEquals(['Bristol', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
 
         $address->unsetEventDispatcher();
 
-        $address = $user->addresses->first();
+        $address = $user->addresses->last();
         $user->addresses()->destroy($address);
-        $this->assertEquals(['Bruxelles'], $user->addresses->pluck('city')->all());
+        $this->assertEquals(['Bristol'], $user->addresses->pluck('city')->all());
 
         $user->addresses()->create(['city' => 'Paris']);
         $user->addresses()->create(['city' => 'San Francisco']);
 
         $freshUser = User::find($user->id);
-        $this->assertEquals(['Bruxelles', 'Paris', 'San Francisco'], $freshUser->addresses->pluck('city')->all());
+        $this->assertEquals(['Bristol', 'Paris', 'San Francisco'], $freshUser->addresses->pluck('city')->all());
 
         $ids = $user->addresses->pluck('_id');
         $user->addresses()->destroy($ids);
@@ -258,7 +238,6 @@ class EmbeddedRelationsTest extends TestCase
 
     public function testEmbedsManyDelete()
     {
-        $this->markTestSkipped('not implemented yet');
 
         $user = User::create(['name' => 'John Doe']);
         $user->addresses()->saveMany([new Address(['city' => 'London']), new Address(['city' => 'Bristol']), new Address(['city' => 'Bruxelles'])]);
