@@ -14,7 +14,7 @@ class Collection
    * @param Connection $connection
    * @param string     $collection
    */
-  public function __construct(Connection $connection, string $collection)
+  public function __construct(Connection $connection, $collection)
   {
       $this->connection = $connection;
       $this->collection = $collection;
