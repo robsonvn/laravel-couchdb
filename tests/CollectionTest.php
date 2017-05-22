@@ -47,9 +47,9 @@ class CollectionTest extends TestCase
       $result = $query->execute();
     }
 
-    public function testExecuteView()
+    /*public function testExecuteView()
     {
-        /*$connection = DB::connection('couchdb');
+        $connection = DB::connection('couchdb');
 
       $collection = new Collection($connection, 'articles');
 
@@ -60,6 +60,6 @@ class CollectionTest extends TestCase
       $query->setReduce(false);
       $query->setIncludeDocs(true);
       $result = $query->execute();
-      print_r($result);*/
-    }
+      print_r($result);
+    }*/
 }
