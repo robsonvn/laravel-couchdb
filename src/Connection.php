@@ -58,7 +58,17 @@ class Connection extends BaseConnection
 
         return $query->from($collection);
     }
-
+    /**
+     * Begin a fluent query against a database collection.
+     *
+     * @param  string $table
+     * @return Query\Builder
+     */
+    public function table($table)
+    {
+        return $this->collection($table);
+    }
+    
     protected function getDefaultPostProcessor()
     {
         return new Query\Processor();

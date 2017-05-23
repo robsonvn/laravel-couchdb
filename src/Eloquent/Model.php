@@ -98,12 +98,17 @@ abstract class Model extends BaseModel
    */
   public function getIdAttribute($value = null)
   {
-      // If we don't have a value for 'id', we will use the CouchDB '_id' value.
-      // This allows us to work with models in a more sql-like way.
+
       if (!$value and array_key_exists('_id', $this->attributes)) {
           $value = $this->attributes['_id'];
       }
 
+      return $value;
+  }
+
+  public function setIdAttribute($value = null)
+  {
+      $this->attributes['_id'] = $value;
       return $value;
   }
 
@@ -230,7 +235,14 @@ abstract class Model extends BaseModel
           if (empty($attributes)) {
               return true;
           }
-          list($id, $rev) = $query->insert($attributes);
+          $response = $query->insert($attributes);
+
+          if(count($response)!==1){
+            return false;
+          }
+
+          $id = $response[0]['id'];
+          $rev = $response[0]['rev'];
       }
 
       $this->setAttribute($keyName, $id);

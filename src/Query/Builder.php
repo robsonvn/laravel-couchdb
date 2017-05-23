@@ -130,13 +130,11 @@ protected $conversion = [
             }
         }
 
-        if ($batch) {
-            return $this->collection->insertMany($values);
-        } else {
-            return $this->collection->insertOne($values, $values['id']);
+        if (! $batch) {
+          $values = [$values];
         }
 
-        return $response;
+        return $this->collection->insertMany($values);
     }
 
     /**
@@ -403,11 +401,7 @@ protected $conversion = [
 
             // We use different methods to compile different wheres.
             $method = "compileWhere{$where['type']}";
-          /*  if(!method_exists($this,$method)){
-              var_dump($wheres);
-              exit;
-            }*/
-
+    
             $result = $this->{$method}($where);
 
             // Wrap the where with an $or operator.
