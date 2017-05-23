@@ -29,7 +29,6 @@ class TestCase extends Orchestra\Testbench\TestCase
     {
         return [
             Robsonvn\CouchDB\ServiceProvider::class,
-            //Jenssegers\Mongodb\Auth\PasswordResetServiceProvider::class,
         ];
     }
 

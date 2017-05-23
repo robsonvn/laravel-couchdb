@@ -1,15 +1,12 @@
 <?php
 
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Auth\Passwords\CanResetPassword;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+use Illuminate\Notifications\Notifiable;
+use Robsonvn\CouchDB\Auth\User as Authenticatable;
 
-class User extends Eloquent implements AuthenticatableContract, CanResetPasswordContract
+class User extends Authenticatable
 {
-    use Authenticatable, CanResetPassword;
-
+    use Notifiable;
+    
     protected $dates = ['birthday', 'entry.date', 'entry.logs.log_date', 'entry.logs.insane_tests.date', 'entry.extreme_insane_test.dates.danger_date'];
     protected static $unguarded = true;
     protected $dateFormat = 'l jS \of F Y h:i:s A';
@@ -64,8 +61,8 @@ class User extends Eloquent implements AuthenticatableContract, CanResetPassword
         return $this->embedsOne('User');
     }
 
-    /*protected function getDateFormat()
+    protected function getDateFormat()
     {
         return 'l jS \of F Y h:i:s A';
-    }*/
+    }
 }
