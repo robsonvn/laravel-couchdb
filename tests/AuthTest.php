@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Auth\Passwords\PasswordBroker;
-use Illuminate\Foundation\Application;
 
 class AuthTest extends TestCase
 {

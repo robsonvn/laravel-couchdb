@@ -528,5 +528,5 @@ class RelationsTest extends TestCase
         $this->assertEquals(1, $user->clients()->count());
         $this->assertEquals([$user->_id], $client->user_ids);
         $this->assertEquals([$client->_id], $user->client_ids);
-    }  
+    }
 }
