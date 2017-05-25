@@ -11,7 +11,7 @@ use Robsonvn\CouchDB\Connection;
 
 class Builder extends BaseBuilder
 {
-    /**
+/**
  * The database collection.
  *
  * @var string
@@ -197,7 +197,6 @@ protected $conversion = [
      */
     public function truncate()
     {
-        //TODO: Create a filter to delete all instead select and delete
         $results = $this->get();
 
         $bulkUpdater = $this->collection->createBulkUpdater();
@@ -208,6 +207,54 @@ protected $conversion = [
         $response = $bulkUpdater->execute();
 
         return $response->status == 201;
+    }
+
+    protected function createIndex(){
+
+      $fields = $this->getSort();
+      $name = $this->resolveIndexName($fields);
+
+      return $this->collection->createMangoIndex($fields,$name) ? $name : false;
+    }
+
+    public function useIndex(array $index){
+      $this->index = $index;
+      return $this;
+    }
+
+    public function getSort(){
+      $sort = isset($this->orders) ? [$this->orders] : [];
+
+      $direction = 'asc';
+
+      //CouchDB 2.0 currently only support a single direction for all fields
+      if(count($this->orders)){
+        $direction = array_unique(array_values($this->orders));
+        if(count($direction)>1){
+          throw new \Exception('Sorts currently only support a single direction for all fields.');
+        }
+        list($direction) = $direction;
+      }
+
+      //always sort per doc_collection first
+      array_unshift($sort,['doc_collection'=>$direction]);
+      return $sort;
+    }
+
+    public function getIndex(){
+      //Use index defined by user otherwise guess which index use
+      if(isset($this->index)){
+        return $this->index;
+      }
+      return array('_design/mango-indexes',$this->resolveIndexName($this->getSort()));
+    }
+
+    protected function resolveIndexName($fields){
+      $sort = array();
+      foreach($fields as $key => $field){
+        $sort[] = key($field).':'.current($field);
+      }
+      return implode('&',$sort);
     }
 
     /**
@@ -256,7 +303,7 @@ protected $conversion = [
         }
     }
 
-    public function get($columns = [])
+    public function get($columns = [], $create_index = true)
     {
         if (is_null($this->columns)) {
             $this->columns = $columns;
@@ -270,25 +317,30 @@ protected $conversion = [
         $this->addWhereGreaterThanNullForOrdersField();
         $wheres = $this->compileWheres();
 
-        //TODO work with projections $this->projections
-
-        $index = null;
         $skip = ($this->offset) ?: 0;
-        $sort = ($this->orders) ? [$this->orders] : [];
 
-        //Sorry about this, but CouchDB limit is 25 by default
-        //TODO CREATE A DRIVER CURSOR TO AVOID THIS SHIT
-        $limit = ($this->limit) ?: 999999999;
+        $sort = $this->getSort();
+
+        $index = $this->getIndex();
+
+        //TODO create driver cursor
+        $limit = ($this->limit) ? : 25;
 
         $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
 
-        //Create a global try catch for on couchdb driver
         if ($results->status != 200) {
-            if ($results->status == 500) {
-                throw new \Exception('IndexError, no-index or no matching fields order/selector');
+            //no-index or no matching fields
+            if($results->status==500){
+              //If use automatic index, lets create the index and try one more time
+              if($create_index){
+                if($this->createIndex()){
+                  return $this->get($columns,false);
+                }
+              }
+              throw new \Exception('QueryException no-index or no matching fields order/selector');
             }
           //TODO improve this exception
-          throw new \Exception('Query Error');
+          throw new \Exception('QueryException '.$results->body['reason']);
         }
 
         $results = $results->body['docs'];
@@ -401,7 +453,7 @@ protected $conversion = [
 
             // We use different methods to compile different wheres.
             $method = "compileWhere{$where['type']}";
-    
+
             $result = $this->{$method}($where);
 
             // Wrap the where with an $or operator.
@@ -714,10 +766,6 @@ protected function compileWhereRaw(array $where)
   {
       $query = ['$inc' => [$column => $amount]];
 
-      if (!empty($extra)) {
-          $query['$set'] = $extra;
-      }
-
       // Protect
       $this->where(function ($query) use ($column) {
           $query->where($column, 'exists', false);
@@ -725,7 +773,7 @@ protected function compileWhereRaw(array $where)
           $query->orWhereNotNull($column);
       });
 
-      return $this->performUpdate($query, $options);
+      return $this->performUpdate($extra, $query);
   }
 
   /**

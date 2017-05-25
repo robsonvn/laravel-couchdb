@@ -20,7 +20,8 @@
     "illuminate/support": "5.4.19",
     "illuminate/container": "5.4.19",
     "illuminate/events": "5.4.19",
-    "doctrine/couchdb": "dev-master"
+    "doctrine/couchdb": "dev-master",
+    "adbario/php-dot-notation": "dev-master"
   },
   "require-dev":{
     "phpunit/phpunit": "@stable",

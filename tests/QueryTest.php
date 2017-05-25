@@ -205,30 +205,18 @@ class QueryTest extends TestCase
 
     public function testOrder()
     {
+      $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
 
-        //Create index
-        $connection = DB::connection('couchdb');
-        $client = $connection->getCouchDBClient();
+      $this->assertEquals(13, $user->age);
 
-        $httpClient = $client->getHttpClient();
+      $user = User::whereNotNull('age')->orderBy('age', 'ASC')->first();
+      $this->assertEquals(13, $user->age);
 
-        $params = [
-          'index' => [
-              'fields'=> ['age', 'doc_collection'],
-          ],
-          'name' => 'age_index',
-        ];
+      $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
+      $this->assertEquals(37, $user->age);
 
-        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
-
-        $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
-        $this->assertEquals(13, $user->age);
-
-        $user = User::whereNotNull('age')->orderBy('age', 'ASC')->first();
-        $this->assertEquals(13, $user->age);
-
-        $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
-        $this->assertEquals(37, $user->age);
+      $this->expectException(\Exception::class);
+      $user = User::whereNotNull('age')->orderBy('age', 'asc')->orderBy('name','desc')->first();
     }
 
     public function testGroupBy()

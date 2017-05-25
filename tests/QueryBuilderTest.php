@@ -1,4 +1,6 @@
 <?php
+use Robsonvn\CouchDB\Collection;
+use Robsonvn\CouchDB\Connection;
 
 class QueryBuilderTest extends TestCase
 {
@@ -47,13 +49,27 @@ class QueryBuilderTest extends TestCase
 
     public function testGet()
     {
-        $users = DB::collection('users')->get();
+        $users = DB::collection('users')->orderBy('name')->get();
         $this->assertEquals(0, count($users));
 
         DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
 
         $users = DB::collection('users')->get();
         $this->assertEquals(1, count($users));
+    }
+
+    public function testUseIndex(){
+
+      $collection = new Collection(DB::connection('couchdb'), 'users');
+
+      $collection->createMangoIndex([['doc_collection'=>'desc'],['name'=>'desc']],'unit-test');
+      DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
+
+      $users = DB::collection('users')->orderBy('name','desc')->useIndex(['_design/mango-indexes','unit-test'])->get();
+      $this->assertEquals(1, count($users));
+      
+      $this->expectException(\Exception::class);
+      $users = DB::collection('users')->orderBy('name','desc')->useIndex(['_design/mango-indexes','invalid'])->get();
     }
 
     public function testNoDocument()
@@ -396,9 +412,7 @@ class QueryBuilderTest extends TestCase
             ['name' => 'spoon', 'type' => 'round', 'amount' => 3, 'id'=>'20'],
         ]);
 
-        $this->createIndex('name');
-
-        $items = DB::collection('items')->whereNotNull('name')->orderBy('name')->take(2)->get();
+        $items = DB::collection('items')->orderBy('name')->take(2)->get();
 
         $this->assertEquals(2, count($items));
         $this->assertEquals('fork', $items[0]['name']);
@@ -413,7 +427,7 @@ class QueryBuilderTest extends TestCase
             ['name' => 'spoon', 'type' => 'round', 'amount' => 14],
         ]);
 
-        $items = DB::collection('items')->whereNotNull('name')->orderBy('name')->skip(2)->get();
+        $items = DB::collection('items')->orderBy('name')->skip(2)->get();
 
         $this->assertEquals(2, count($items));
         $this->assertEquals('spoon', $items[0]['name']);
@@ -639,14 +653,21 @@ class QueryBuilderTest extends TestCase
 
     public function testIncrement()
     {
-        $this->markTestSkipped('increment , not implemented yet');
 
         $response = DB::collection('users')->insert([
             ['name' => 'John Doe', 'age' => 30, 'note' => 'adult'],
             ['name' => 'Jane Doe', 'age' => 10, 'note' => 'minor'],
             ['name' => 'Robert Roe', 'age' => null],
-            ['name' => 'Mark Moe'],
+            ['name' => 'Mark Moe','occupation'=>['name'=>'physician','experience_in_years'=>10]],
         ]);
+
+        //dot notation
+        $user = DB::collection('users')->where('name', 'Mark Moe')->first();
+        $this->assertEquals(10, $user['occupation']['experience_in_years']);
+        DB::collection('users')->where('name', 'Mark Moe')->increment('occupation.experience_in_years');
+
+        $user = DB::collection('users')->where('name','Mark Moe')->first();
+        $this->assertEquals(11, $user['occupation']['experience_in_years']);
 
         $user = DB::collection('users')->where('name', 'John Doe')->first();
         $this->assertEquals(30, $user['age']);
@@ -704,29 +725,5 @@ class QueryBuilderTest extends TestCase
         foreach ($results as $result) {
             $this->assertEquals(1, count($result['tags']));
         }
-    }
-
-    public function createIndex($index)
-    {
-        if (!is_array($index)) {
-            $index = [$index];
-        }
-
-      //Create index
-      $connection = DB::connection('couchdb');
-        $client = $connection->getCouchDBClient();
-
-        $httpClient = $client->getHttpClient();
-
-        $index[] = 'doc_collection';
-
-        $params = [
-        'index' => [
-            'fields'=> $index,
-        ],
-        'name' => implode('_', $index),
-      ];
-
-        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
     }
 }

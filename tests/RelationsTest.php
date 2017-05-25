@@ -86,8 +86,6 @@ class RelationsTest extends TestCase
         Item::create(['type' => 'sword', 'user_id' => $user->_id]);
         Item::create(['type' => 'bag', 'user_id' => null]);
 
-        $this->createIndex('user_id');
-
         $items = Item::with('user')->orderBy('user_id', 'desc')->get();
 
         $user = $items[0]->getRelation('user');
@@ -530,29 +528,5 @@ class RelationsTest extends TestCase
         $this->assertEquals(1, $user->clients()->count());
         $this->assertEquals([$user->_id], $client->user_ids);
         $this->assertEquals([$client->_id], $user->client_ids);
-    }
-
-    public function createIndex($index)
-    {
-        if (!is_array($index)) {
-            $index = [$index];
-        }
-
-      //Create index
-      $connection = DB::connection('couchdb');
-        $client = $connection->getCouchDBClient();
-
-        $httpClient = $client->getHttpClient();
-
-        $index[] = 'doc_collection';
-
-        $params = [
-        'index' => [
-            'fields'=> $index,
-        ],
-        'name' => implode('_', $index),
-      ];
-
-        $response = $httpClient->request('POST', '/'.$client->getDatabase().'/_index', json_encode($params));
-    }
+    }  
 }
