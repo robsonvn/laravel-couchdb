@@ -1,6 +1,5 @@
 {
   "name": "robsonvn/laravel-couchdb",
-  "version" : "dev-master",
   "description": "A CouchDB v2.0.0 based Eloquent model and Query builder for Laravel",
   "authors": [
     {
