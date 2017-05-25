@@ -1,4 +1,5 @@
 <?php
+
 use Robsonvn\CouchDB\Collection;
 use Robsonvn\CouchDB\Connection;
 
@@ -58,18 +59,18 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(1, count($users));
     }
 
-    public function testUseIndex(){
+    public function testUseIndex()
+    {
+        $collection = new Collection(DB::connection('couchdb'), 'users');
 
-      $collection = new Collection(DB::connection('couchdb'), 'users');
+        $collection->createMangoIndex([['doc_collection'=>'desc'], ['name'=>'desc']], 'unit-test');
+        DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
 
-      $collection->createMangoIndex([['doc_collection'=>'desc'],['name'=>'desc']],'unit-test');
-      DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
+        $users = DB::collection('users')->orderBy('name', 'desc')->useIndex(['_design/mango-indexes', 'unit-test'])->get();
+        $this->assertEquals(1, count($users));
 
-      $users = DB::collection('users')->orderBy('name','desc')->useIndex(['_design/mango-indexes','unit-test'])->get();
-      $this->assertEquals(1, count($users));
-      
-      $this->expectException(\Exception::class);
-      $users = DB::collection('users')->orderBy('name','desc')->useIndex(['_design/mango-indexes','invalid'])->get();
+        $this->expectException(\Exception::class);
+        $users = DB::collection('users')->orderBy('name', 'desc')->useIndex(['_design/mango-indexes', 'invalid'])->get();
     }
 
     public function testNoDocument()
@@ -653,12 +654,11 @@ class QueryBuilderTest extends TestCase
 
     public function testIncrement()
     {
-
         $response = DB::collection('users')->insert([
             ['name' => 'John Doe', 'age' => 30, 'note' => 'adult'],
             ['name' => 'Jane Doe', 'age' => 10, 'note' => 'minor'],
             ['name' => 'Robert Roe', 'age' => null],
-            ['name' => 'Mark Moe','occupation'=>['name'=>'physician','experience_in_years'=>10]],
+            ['name' => 'Mark Moe', 'occupation'=>['name'=>'physician', 'experience_in_years'=>10]],
         ]);
 
         //dot notation
@@ -666,7 +666,7 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(10, $user['occupation']['experience_in_years']);
         DB::collection('users')->where('name', 'Mark Moe')->increment('occupation.experience_in_years');
 
-        $user = DB::collection('users')->where('name','Mark Moe')->first();
+        $user = DB::collection('users')->where('name', 'Mark Moe')->first();
         $this->assertEquals(11, $user['occupation']['experience_in_years']);
 
         $user = DB::collection('users')->where('name', 'John Doe')->first();

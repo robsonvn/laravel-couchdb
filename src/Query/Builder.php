@@ -11,7 +11,7 @@ use Robsonvn\CouchDB\Connection;
 
 class Builder extends BaseBuilder
 {
-/**
+    /**
  * The database collection.
  *
  * @var string
@@ -130,8 +130,8 @@ protected $conversion = [
             }
         }
 
-        if (! $batch) {
-          $values = [$values];
+        if (!$batch) {
+            $values = [$values];
         }
 
         return $this->collection->insertMany($values);
@@ -209,52 +209,60 @@ protected $conversion = [
         return $response->status == 201;
     }
 
-    protected function createIndex(){
+    protected function createIndex()
+    {
+        $fields = $this->getSort();
+        $name = $this->resolveIndexName($fields);
 
-      $fields = $this->getSort();
-      $name = $this->resolveIndexName($fields);
-
-      return $this->collection->createMangoIndex($fields,$name) ? $name : false;
+        return $this->collection->createMangoIndex($fields, $name) ? $name : false;
     }
 
-    public function useIndex(array $index){
-      $this->index = $index;
-      return $this;
+    public function useIndex(array $index)
+    {
+        $this->index = $index;
+
+        return $this;
     }
 
-    public function getSort(){
-      $sort = isset($this->orders) ? [$this->orders] : [];
+    public function getSort()
+    {
+        $sort = isset($this->orders) ? [$this->orders] : [];
 
-      $direction = 'asc';
+        $direction = 'asc';
 
       //CouchDB 2.0 currently only support a single direction for all fields
-      if(count($this->orders)){
-        $direction = array_unique(array_values($this->orders));
-        if(count($direction)>1){
-          throw new \Exception('Sorts currently only support a single direction for all fields.');
-        }
-        list($direction) = $direction;
+      if (count($this->orders)) {
+          $direction = array_unique(array_values($this->orders));
+          if (count($direction) > 1) {
+              throw new \Exception('Sorts currently only support a single direction for all fields.');
+          }
+          list($direction) = $direction;
       }
 
       //always sort per doc_collection first
-      array_unshift($sort,['doc_collection'=>$direction]);
-      return $sort;
+      array_unshift($sort, ['doc_collection'=>$direction]);
+
+        return $sort;
     }
 
-    public function getIndex(){
-      //Use index defined by user otherwise guess which index use
-      if(isset($this->index)){
-        return $this->index;
+    public function getIndex()
+    {
+        //Use index defined by user otherwise guess which index use
+      if (isset($this->index)) {
+          return $this->index;
       }
-      return array('_design/mango-indexes',$this->resolveIndexName($this->getSort()));
+
+        return ['_design/mango-indexes', $this->resolveIndexName($this->getSort())];
     }
 
-    protected function resolveIndexName($fields){
-      $sort = array();
-      foreach($fields as $key => $field){
-        $sort[] = key($field).':'.current($field);
-      }
-      return implode('&',$sort);
+    protected function resolveIndexName($fields)
+    {
+        $sort = [];
+        foreach ($fields as $key => $field) {
+            $sort[] = key($field).':'.current($field);
+        }
+
+        return implode('&', $sort);
     }
 
     /**
@@ -324,20 +332,20 @@ protected $conversion = [
         $index = $this->getIndex();
 
         //TODO create driver cursor
-        $limit = ($this->limit) ? : 25;
+        $limit = ($this->limit) ?: 25;
 
         $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
 
         if ($results->status != 200) {
             //no-index or no matching fields
-            if($results->status==500){
-              //If use automatic index, lets create the index and try one more time
-              if($create_index){
-                if($this->createIndex()){
-                  return $this->get($columns,false);
-                }
+            if ($results->status == 500) {
+                //If use automatic index, lets create the index and try one more time
+              if ($create_index) {
+                  if ($this->createIndex()) {
+                      return $this->get($columns, false);
+                  }
               }
-              throw new \Exception('QueryException no-index or no matching fields order/selector');
+                throw new \Exception('QueryException no-index or no matching fields order/selector');
             }
           //TODO improve this exception
           throw new \Exception('QueryException '.$results->body['reason']);

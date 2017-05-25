@@ -99,7 +99,6 @@ class EmbedsMany extends EmbedsOneOrMany
         $response = $query->update([$this->localKey=>$entries]);
         $result = current($response);
 
-
         // Attach the model to its parent.
         if ($result['ok']) {
             $this->associate($model);

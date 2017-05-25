@@ -98,7 +98,6 @@ abstract class Model extends BaseModel
    */
   public function getIdAttribute($value = null)
   {
-
       if (!$value and array_key_exists('_id', $this->attributes)) {
           $value = $this->attributes['_id'];
       }
@@ -106,11 +105,12 @@ abstract class Model extends BaseModel
       return $value;
   }
 
-  public function setIdAttribute($value = null)
-  {
-      $this->attributes['_id'] = $value;
-      return $value;
-  }
+    public function setIdAttribute($value = null)
+    {
+        $this->attributes['_id'] = $value;
+
+        return $value;
+    }
 
     /**
      * Set the parent relation.
@@ -237,8 +237,8 @@ abstract class Model extends BaseModel
           }
           $response = $query->insert($attributes);
 
-          if(count($response)!==1){
-            return false;
+          if (count($response) !== 1) {
+              return false;
           }
 
           $id = $response[0]['id'];

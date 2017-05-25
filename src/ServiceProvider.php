@@ -7,7 +7,7 @@ use Robsonvn\CouchDB\Eloquent\Model;
 
 class ServiceProvider extends IlluminateServiceProvider
 {
-      /**
+    /**
      * Bootstrap the application events.
      */
     public function boot()
@@ -16,6 +16,7 @@ class ServiceProvider extends IlluminateServiceProvider
 
         Model::setEventDispatcher($this->app['events']);
     }
+
     /**
      * Register the provider.
      *

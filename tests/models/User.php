@@ -6,7 +6,7 @@ use Robsonvn\CouchDB\Auth\User as Authenticatable;
 class User extends Authenticatable
 {
     use Notifiable;
-    
+
     protected $dates = ['birthday', 'entry.date', 'entry.logs.log_date', 'entry.logs.insane_tests.date', 'entry.extreme_insane_test.dates.danger_date'];
     protected static $unguarded = true;
     protected $dateFormat = 'l jS \of F Y h:i:s A';

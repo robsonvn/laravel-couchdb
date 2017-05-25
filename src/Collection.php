@@ -23,14 +23,15 @@ class Collection
     public function __call($method, $parameters)
     {
         $parameters[0]['doc_collection'] = $this->collection;
-        
+
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
         return $result;
     }
 
-    public function getName(){
-      return $this->collection;
+    public function getName()
+    {
+        return $this->collection;
     }
 
     public function deleteMany($where)
@@ -134,16 +135,17 @@ class Collection
         return $document;
     }
 
-    protected function applyUpdateOptionInc($document,$options){
-      $data = new \Adbar\Dot;
-      $data->setReference($document);
+    protected function applyUpdateOptionInc($document, $options)
+    {
+        $data = new \Adbar\Dot();
+        $data->setReference($document);
 
-      foreach($options as $key=>$value){
-        $current_value = ($data->get($key)) ? : 0;
-        $data->set($key,$current_value+$value);
-      }
+        foreach ($options as $key=>$value) {
+            $current_value = ($data->get($key)) ?: 0;
+            $data->set($key, $current_value + $value);
+        }
 
-      return $document;
+        return $document;
     }
 
     protected function applyUpdateOptionUnset($document, $options)
@@ -217,8 +219,10 @@ class Collection
         return Arr::array_diff_recursive($document, $options);
     }
 
-    public function createMangoIndex($fields, $index_name){
-      $response = $this->connection->getCouchDBClient()->createMangoIndex($fields, 'mango-indexes',$index_name);
-      return in_array($response->status,[200,201]);
+    public function createMangoIndex($fields, $index_name)
+    {
+        $response = $this->connection->getCouchDBClient()->createMangoIndex($fields, 'mango-indexes', $index_name);
+
+        return in_array($response->status, [200, 201]);
     }
 }

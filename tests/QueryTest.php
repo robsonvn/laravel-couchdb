@@ -205,18 +205,18 @@ class QueryTest extends TestCase
 
     public function testOrder()
     {
-      $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
+        $user = User::whereNotNull('age')->orderBy('age', 'asc')->first();
 
-      $this->assertEquals(13, $user->age);
+        $this->assertEquals(13, $user->age);
 
-      $user = User::whereNotNull('age')->orderBy('age', 'ASC')->first();
-      $this->assertEquals(13, $user->age);
+        $user = User::whereNotNull('age')->orderBy('age', 'ASC')->first();
+        $this->assertEquals(13, $user->age);
 
-      $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
-      $this->assertEquals(37, $user->age);
+        $user = User::whereNotNull('age')->orderBy('age', 'desc')->first();
+        $this->assertEquals(37, $user->age);
 
-      $this->expectException(\Exception::class);
-      $user = User::whereNotNull('age')->orderBy('age', 'asc')->orderBy('name','desc')->first();
+        $this->expectException(\Exception::class);
+        $user = User::whereNotNull('age')->orderBy('age', 'asc')->orderBy('name', 'desc')->first();
     }
 
     public function testGroupBy()

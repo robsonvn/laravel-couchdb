@@ -210,7 +210,7 @@ class EmbeddedRelationsTest extends TestCase
         $this->assertNotEquals($last_user_rev, $user->getRevision());
         $this->assertEquals(['Bristol', 'Bruxelles'], $user->addresses->pluck('city')->all());
         $freshUser = User::find($user->id);
-          $this->assertEquals(['Bristol', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
+        $this->assertEquals(['Bristol', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
 
         $address->unsetEventDispatcher();
 
@@ -238,7 +238,6 @@ class EmbeddedRelationsTest extends TestCase
 
     public function testEmbedsManyDelete()
     {
-
         $user = User::create(['name' => 'John Doe']);
         $user->addresses()->saveMany([new Address(['city' => 'London']), new Address(['city' => 'Bristol']), new Address(['city' => 'Bruxelles'])]);
 
