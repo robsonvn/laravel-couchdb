@@ -40,7 +40,7 @@ class Collection
         $client = $this->connection->getCouchDBClient();
         $where['doc_collection'] = $this->collection;
 
-        $result = $client->find($where, ['_id', '_rev']);
+        $result = $client->find($where);
 
         if ($result->status == 200) {
             $bulkUpdater = $client->createBulkUpdater();
