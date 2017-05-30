@@ -197,16 +197,7 @@ protected $conversion = [
      */
     public function truncate()
     {
-        $results = $this->get();
-
-        $bulkUpdater = $this->collection->createBulkUpdater();
-        foreach ($results as $row) {
-            $bulkUpdater->deleteDocument($row['_id'], $row['_rev']);
-        }
-
-        $response = $bulkUpdater->execute();
-
-        return $response->status == 201;
+         return $this->collection->deleteMany($this->compileWheres());
     }
 
     protected function createIndex()

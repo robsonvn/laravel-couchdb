@@ -46,7 +46,8 @@ class Collection
             $bulkUpdater = $client->createBulkUpdater();
 
             foreach ($result->body['docs'] as $doc) {
-                $bulkUpdater->deleteDocument($doc['_id'], $doc['_rev']);
+                $doc['_deleted'] = true;
+                $bulkUpdater->updateDocument($doc,$doc['_id']);
             }
             $result = $bulkUpdater->execute();
 
