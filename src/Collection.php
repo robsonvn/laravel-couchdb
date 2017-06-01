@@ -40,7 +40,8 @@ class Collection
         $client = $this->connection->getCouchDBClient();
         $where['doc_collection'] = $this->collection;
 
-        $result = $client->find($where);
+        //TODO: change this limit after create cursor
+        $result = $client->find($where, [], [], 999999999);
 
         if ($result->status == 200) {
             $bulkUpdater = $client->createBulkUpdater();
@@ -100,7 +101,8 @@ class Collection
 
     public function updateMany($selector, $values, array $options = [])
     {
-        $result = $this->find($selector);
+        //TODO: change this limit after create cursor
+        $result = $this->find($selector, [], [], 999999999);
 
         if ($result->status == 200) {
             $documents = $result->body['docs'];
