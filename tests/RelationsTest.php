@@ -323,6 +323,8 @@ class RelationsTest extends TestCase
     public function testBelongsToManyCustom()
     {
         $user = User::create(['name' => 'John Doe']);
+
+
         $group = $user->groups()->create(['name' => 'Admins']);
 
         // Refetch

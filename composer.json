@@ -15,10 +15,10 @@
         }
   ],
   "require": {
-    "illuminate/database": "5.4.19",
-    "illuminate/support": "5.4.19",
-    "illuminate/container": "5.4.19",
-    "illuminate/events": "5.4.19",
+    "illuminate/database": "^5.4.23",
+    "illuminate/support": "^5.4.23",
+    "illuminate/container": "^5.4.23",
+    "illuminate/events": "^5.4.23",
     "doctrine/couchdb": "dev-master",
     "adbario/php-dot-notation": "dev-master"
   },

@@ -19,6 +19,10 @@ class BelongsToMany extends EloquentBelongsToMany
         return $this->getForeignKey();
     }
 
+    public function getQualifiedForeignPivotKeyName()
+     {
+         return $this->foreignPivotKey;
+     }
     /**
      * {@inheritdoc}
      */
@@ -135,6 +139,7 @@ class BelongsToMany extends EloquentBelongsToMany
 
         $records = $this->formatSyncList($ids);
 
+
         $detach = array_diff($current, array_keys($records));
 
         // We need to make sure we pass a clean array, so that it is not interpreted
@@ -185,7 +190,7 @@ class BelongsToMany extends EloquentBelongsToMany
             $id = $model->getKey();
 
             // Attach the new parent id to the related model.
-            $model->push($this->foreignKey, $this->parent->getKey(), true);
+            $model->push($this->foreignPivotKey, $this->parent->getKey(), true);
         } else {
             if ($id instanceof Collection) {
                 $id = $id->modelKeys();
@@ -196,7 +201,7 @@ class BelongsToMany extends EloquentBelongsToMany
             $query->whereIn($this->related->getKeyName(), (array) $id);
 
             // Attach the new parent id to the related model.
-            $query->push($this->foreignKey, $this->parent->getKey(), true);
+            $query->push($this->foreignPivotKey, $this->parent->getKey(), true);
         }
 
         // Attach the new ids to the parent model.
@@ -232,7 +237,7 @@ class BelongsToMany extends EloquentBelongsToMany
         }
 
         // Remove the relation to the parent.
-        $query->pull($this->foreignKey, $this->parent->getKey());
+        $query->pull($this->foreignPivotKey, $this->parent->getKey());
 
         if ($touch) {
             $this->touchIfTouching();
@@ -246,7 +251,7 @@ class BelongsToMany extends EloquentBelongsToMany
      */
     protected function buildDictionary(Collection $results)
     {
-        $foreign = $this->foreignKey;
+        $foreign = $this->foreignPivotKey;
 
         // First we will build a dictionary of child models keyed by the foreign key
         // of the relation so that we will easily and quickly match them to their
@@ -287,7 +292,7 @@ class BelongsToMany extends EloquentBelongsToMany
      */
     public function getForeignKey()
     {
-        return $this->foreignKey;
+        return $this->foreignPivotKey;
     }
 
     /**
@@ -295,7 +300,7 @@ class BelongsToMany extends EloquentBelongsToMany
      */
     public function getQualifiedForeignKeyName()
     {
-        return $this->foreignKey;
+        return $this->foreignPivotKey;
     }
 
     /**
@@ -328,6 +333,7 @@ class BelongsToMany extends EloquentBelongsToMany
      */
     public function getRelatedKey()
     {
-        return property_exists($this, 'relatedKey') ? $this->relatedKey : $this->otherKey;
+        //var_dump($this);
+        return property_exists($this, 'relatedPivotKey') ? $this->relatedPivotKey : $this->otherKey;
     }
 }

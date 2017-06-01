@@ -336,7 +336,7 @@ protected $conversion = [
                       return $this->get($columns, false);
                   }
               }
-                throw new \Exception('QueryException no-index or no matching fields order/selector');
+              throw new \Exception('QueryException no-index or no matching fields order/selector');
             }
           //TODO improve this exception
           throw new \Exception('QueryException '.$results->body['reason']);
