@@ -100,6 +100,39 @@ class EmbeddedRelationsTest extends TestCase
         $this->assertEquals(['London', 'Manhattan', 'Bruxelles'], $freshUser->addresses->pluck('city')->all());
     }
 
+    public function searchClosure($value){
+      if(is_object($value)){
+         $properties = (new ReflectionObject($value))->getProperties();
+        foreach($properties as $prop){
+          $prop->setAccessible(true);
+
+          $prop_value = $prop->getValue($value);
+          if ($prop_value instanceof Closure) {
+            var_dump($prop);
+            exit;
+          }
+          print_r($prop_value);
+          $this->searchClosure($prop_value);
+        }
+      }else if(is_array($value)){
+        foreach($value as $attr){
+          $this->searchClosure($attr);
+        }
+        echo "bb\n";
+      }
+    }
+
+    public function testEmbedsManySerialize(){
+      $user = User::create(['name' => 'John Doe']);
+
+      $address = new Address(['city' => 'London']);
+      $address = $user->addresses()->save($address);
+
+      $serialized = serialize($user);
+      $unserialized = unserialize($serialized);
+      $this->assertNotNull($unserialized->addresses);
+    }
+
     public function testEmbedsToArray()
     {
         $user = User::create(['name' => 'John Doe']);

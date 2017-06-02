@@ -83,7 +83,7 @@ abstract class EmbedsOneOrMany extends Relation
         foreach ($models as $model) {
             $results = $model->$relation()->getResults();
 
-            $model->setParentRelation($this);
+            $model->setParentRelation($this->parent,$this->relation);
 
             $model->setRelation($relation, $results);
         }
@@ -120,7 +120,7 @@ abstract class EmbedsOneOrMany extends Relation
      */
     public function save(Model $model)
     {
-        $model->setParentRelation($this);
+        $model->setParentRelation($this->parent,$this->relation);
 
         return $model->save() ? $model : false;
     }
@@ -155,7 +155,7 @@ abstract class EmbedsOneOrMany extends Relation
         // on the models. Otherwise, some of these attributes will not get set.
         $instance = $this->related->newInstance($attributes);
 
-        $instance->setParentRelation($this);
+        $instance->setParentRelation($this->parent,$this->relation);
 
         $instance->save();
 
@@ -289,7 +289,7 @@ abstract class EmbedsOneOrMany extends Relation
 
         $model = $this->related->newFromBuilder((array) $attributes);
 
-        $model->setParentRelation($this);
+        $model->setParentRelation($this->parent,$this->relation);
 
         $model->setRelation($this->foreignKey, $this->parent);
 
@@ -298,6 +298,16 @@ abstract class EmbedsOneOrMany extends Relation
 
         return $model;
     }
+    /*
+    protected function getModel($values){
+      $models = $this->related->hydrate($values);
+      foreach($models as $model){
+        //$model->setParentRelation($this->parent,$this->relation);
+        $model->setRelation($this->foreignKey, $this->parent);
+      }
+      return $models;
+    }
+    */
 
     /**
      * Get the relation instance of the parent.

@@ -36,6 +36,18 @@ class RelationsTest extends TestCase
         $this->assertEquals(3, count($items));
     }
 
+    public function testHasManySerialize(){
+      $user = User::create(['name' => 'John Doe']);
+      Item::create(['type' => 'knife', 'user_id' => $user->_id]);
+      Item::create(['type' => 'shield', 'user_id' => $user->_id]);
+      Item::create(['type' => 'sword', 'user_id' => $user->_id]);
+      Item::create(['type' => 'bag', 'user_id' => null]);
+
+      $serialized = serialize($user);
+      $unserialized = unserialize($serialized);
+      $this->assertEquals(3, count($unserialized->items));
+    }
+
     public function testBelongsTo()
     {
         $user = User::create(['name' => 'George R. R. Martin']);
@@ -53,6 +65,16 @@ class RelationsTest extends TestCase
 
         $book = Book::create(['title' => 'A Clash of Kings']);
         $this->assertEquals(null, $book->author);
+    }
+
+    public function testBelongsToSerialize(){
+      $user = User::create(['name' => 'George R. R. Martin']);
+      $book = Book::create(['title' => 'A Clash of Kings', 'author_id' => $user->_id]);
+
+      $serialized = serialize($book);
+      $unserialized = unserialize($serialized);
+      $author = $unserialized->author;
+      $this->assertEquals('George R. R. Martin', $author->name);
     }
 
     public function testHasOne()

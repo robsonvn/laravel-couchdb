@@ -30,8 +30,9 @@ abstract class Model extends BaseModel
     /**
      * The parent relation instance.
      *
-     * @var Relation
+     * @var Model
      */
+    protected $parent;
     protected $parentRelation;
 
     /**
@@ -117,8 +118,9 @@ abstract class Model extends BaseModel
      *
      * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
      */
-    public function setParentRelation(Relation $relation)
+    public function setParentRelation(Model $parent, $relation)
     {
+        $this->parent = $parent;
         $this->parentRelation = $relation;
     }
 
@@ -129,7 +131,11 @@ abstract class Model extends BaseModel
      */
     public function getParentRelation()
     {
-        return $this->parentRelation;
+        if(isset($this->parentRelation)){
+          $relation =  call_user_func_array([$this->parent,$this->parentRelation],[]);
+          return $relation;
+        }
+        return;
     }
 
   /**
