@@ -27,12 +27,13 @@ class QueryTest extends TestCase
     public function testWhere()
     {
         $users = User::where('age', 35)->get();
-        $this->assertEquals(3, count($users));
 
+        $this->assertEquals(3, count($users));
         $users = User::where('age', '=', 35)->get();
         $this->assertEquals(3, count($users));
 
         $users = User::where('age', '>=', 35)->get();
+
         $this->assertEquals(4, count($users));
 
         $users = User::where('age', '<=', 18)->get();

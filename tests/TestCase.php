@@ -2,21 +2,6 @@
 
 class TestCase extends Orchestra\Testbench\TestCase
 {
-    /**
-     * Get application providers.
-     *
-     * @param \Illuminate\Foundation\Application $app
-     *
-     * @return array
-     */
-    protected function getApplicationProviders($app)
-    {
-        $providers = parent::getApplicationProviders($app);
-
-        unset($providers[array_search('Illuminate\Auth\Passwords\PasswordResetServiceProvider', $providers)]);
-
-        return $providers;
-    }
 
     /**
      * Get package providers.
@@ -41,8 +26,6 @@ class TestCase extends Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        // reset base path to point to our package's src directory
-        //$app['path.base'] = __DIR__ . '/../src';
 
         $config = require 'config/database.php';
 

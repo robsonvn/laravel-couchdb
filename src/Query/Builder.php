@@ -386,26 +386,14 @@ protected $conversion = [
         // We will add all compiled wheres to this array.
         $compiled = [];
 
-        //CouchDB collation order considers null, false and true as less than an integer
-        //and any letter as greater than an integer
-        //to avoid unexpected results, let's specify what type of value we're querying
-        foreach ($wheres as $where) {
+        foreach ($wheres as $i => &$where) {
+
             if (isset($where['operator']) && in_array($where['operator'], ['>', '>=', '<', '<='])) {
                 $value_type = $this->getDatabaseEquivalentDataType($where['value']);
-
-                if (in_array($value_type, ['boolean', 'number', 'string'])) {
-                    $wheres[] = [
-                'type'     => $where['type'],
-                'operator' => 'type',
-                'column'   => $where['column'],
-                'boolean'  => 'and',
-                'value'    => $value_type,
-              ];
+                if ($value_type == 'number') {
+                    $where['type'] = 'NumberComparison';
                 }
             }
-        }
-
-        foreach ($wheres as $i => &$where) {
 
             // Make sure the operator is in lowercase.
             if (isset($where['operator'])) {
@@ -415,11 +403,6 @@ protected $conversion = [
                 $convert = [
                     'regexp'        => 'regex',
                     'elemmatch'     => 'elemMatch',
-                    'geointersects' => 'geoIntersects',
-                    'geowithin'     => 'geoWithin',
-                    'nearsphere'    => 'nearSphere',
-                    'maxdistance'   => 'maxDistance',
-                    'centersphere'  => 'centerSphere',
                     'uniquedocs'    => 'uniqueDocs',
                 ];
 
@@ -472,6 +455,8 @@ protected $conversion = [
 
         return $compiled;
     }
+
+
 
     /**
      * @param array $where
@@ -580,6 +565,31 @@ protected function compileWhereRaw(array $where)
   }
 
   /**
+  * CouchDB collation order considers null, false and true less than an integer and any letter greater than an integer
+  * To avoid unexpected results, lets define a scope for numbers where a > number > true
+  * http://docs.couchdb.org/en/2.0.0/couchapp/views/collation.html
+  * @param array $where
+  * @return array
+  */
+  protected function compileWhereNumberComparison(array $where){
+    extract($where);
+
+    if(starts_with($operator,'>')){
+      $aux_operator = '$lt';
+      $aux_value  = 'a';
+    }else{
+      $aux_operator = '$gt';
+      $aux_value  = true;
+    }
+
+    return [
+        $column => [
+             $this->conversion[$operator] => $value,
+             $aux_operator => $aux_value,
+        ],
+    ];
+  }
+  /**
    * @param array $where
    *
    * @return array
@@ -587,8 +597,6 @@ protected function compileWhereRaw(array $where)
   protected function compileWhereBetween(array $where)
   {
       extract($where);
-
-      $value_type = $this->getDatabaseEquivalentDataType($values[0]);
 
       if ($not) {
           return [
@@ -605,7 +613,7 @@ protected function compileWhereRaw(array $where)
                   ],
               ],
             $column => [
-              '$type'=> $value_type,
+              '$type'=> $this->getDatabaseEquivalentDataType($values[0]),
             ],
           ];
       } else {
@@ -613,7 +621,6 @@ protected function compileWhereRaw(array $where)
               $column => [
                   '$gte' => $values[0],
                   '$lte' => $values[1],
-                  '$type'=> $value_type,
               ],
           ];
       }

@@ -26,6 +26,8 @@ class Collection
 
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
+        //echo json_encode($parameters,JSON_PRETTY_PRINT);
+
         return $result;
     }
 
