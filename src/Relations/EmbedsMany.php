@@ -60,7 +60,15 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         //Reload parent values
+        $isUnguarded = $this->parent->isUnguarded();
+
+        $this->parent->unguard();
         $this->parent->fill($this->parent->fresh()->getAttributes());
+
+        if(!$isUnguarded){
+            $this->parent->reguard();
+        }
+
         $this->parent->syncOriginal();
 
         return $result ? $model : false;
@@ -106,7 +114,14 @@ class EmbedsMany extends EmbedsOneOrMany
 
         //Reload parent values
         //Where we need to get the data from the database because for now we don't have the successful response status
+        $isUnguarded = $this->parent->isUnguarded();
+
+        $this->parent->unguard();
         $this->parent->fill($this->parent->fresh()->getAttributes());
+
+        if(!$isUnguarded){
+            $this->parent->reguard();
+        }
         $this->parent->syncOriginal();
 
         return $result ? $model : false;
