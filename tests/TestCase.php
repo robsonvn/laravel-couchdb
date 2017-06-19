@@ -2,7 +2,6 @@
 
 class TestCase extends Orchestra\Testbench\TestCase
 {
-
     /**
      * Get package providers.
      *
@@ -14,6 +13,7 @@ class TestCase extends Orchestra\Testbench\TestCase
     {
         return [
             Robsonvn\CouchDB\ServiceProvider::class,
+            Robsonvn\CouchDB\Auth\PasswordResetServiceProvider::class,
         ];
     }
 
