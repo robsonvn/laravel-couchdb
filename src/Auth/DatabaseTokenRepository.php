@@ -11,7 +11,7 @@ class DatabaseTokenRepository extends BaseDatabaseTokenRepository
      */
     protected function getPayload($email, $token)
     {
-      return ['email' => $email, 'token' => $this->hasher->make($token), 'created_at' => (new Carbon())->format('Y-d-m H:m:i')];
+      return ['email' => $email, 'token' => $this->hasher->make($token), 'created_at' => (new Carbon())->format('Y-m-d H:i:s')];
     }
 
     /**
@@ -19,6 +19,6 @@ class DatabaseTokenRepository extends BaseDatabaseTokenRepository
      */
     protected function tokenExpired($createdAt)
     {
-      return Carbon::createFromFormat('Y-d-m H:m:i',$createdAt)->addSeconds($this->expires)->isPast();
+      return Carbon::createFromFormat('Y-m-d H:i:s',$createdAt)->addSeconds($this->expires)->isPast();
     }
 }
