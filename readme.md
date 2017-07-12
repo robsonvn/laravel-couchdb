@@ -13,8 +13,6 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 
 1. This library is under development, so use on your own.
 2. CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
-3. CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (doc_collection) in every single document. Please, treat doc_collection as a reserved attribute. Use of collections is not optional.
-
 * CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, which directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
 
 
@@ -78,6 +76,7 @@ CouchDB Limitations
 ------------
 * Currently, there's no way to update and delete using Mango Query. In this case, we have to query the data, bring it to memory, update the fields and bulk an update.
 * CouchDB is really touchy in matter of indexes, even the documentation recommends to always explicit the index that your query should use. In this case, **we are automatically creating all necessaries index on the fly**.  
+* CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (doc_collection) in every single document. Please, treat doc_collection as a reserved attribute. Use of collections is not optional.
 
 Limitations
 ------------
@@ -91,3 +90,12 @@ TODO
 * Add compatibility to work with Full Text Search engine.
 * Add support to MorphToMany relationship.
 * Add support to aggregation, group by and distinct operations.
+
+## Special Thanks 
+
+[Automated Solutions Limited](http://www.automated.co.nz) for supporting this project.
+
+[Jens Segers](https://github.com/jenssegers) and the [Laravel MongoDB contributors](https://github.com/jenssegers/laravel-mongodb/graphs/contributors) because many of the code and structure of this project came from there.
+
+~~[Doctrine] for abandoning the (CouchDB Client library)[https://github.com/doctrine/couchdb-client]~~
+
