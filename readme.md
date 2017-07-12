@@ -12,10 +12,10 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 ## Good to know before using it
 
 1. This library is under development, so use on your own.
-2. CouchDB **IS NOT** Mongo DB, do not works as Mongo DB and do not has the same resources as Mongo DB, so **DO NOT** expect that this library does everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does.
+2. CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
 3. CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (doc_collection) in every single document. Please, treat doc_collection as a reserved attribute. Use of collections is not optional.
 
-* CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, what directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
+* CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, which directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
 
 
 ## Installation
@@ -82,11 +82,12 @@ CouchDB Limitations
 Limitations
 ------------
 
-* Due the way we're creating index this library do not works with the Full Text Search engine enabled yet.
-
+* Due the way we're creating index this library does not work with the Full Text Search engine enabled yet.
+* Aggregation, group by and distinct operations is not supported yet.
 
 TODO
 ------------
 
-* Add compatibility to work with Full Text Search engine on.
+* Add compatibility to work with Full Text Search engine.
 * Add support to MorphToMany relationship.
+* Add support to aggregation, group by and distinct operations.
