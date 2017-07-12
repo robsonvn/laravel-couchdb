@@ -97,5 +97,5 @@ TODO
 
 [Jens Segers](https://github.com/jenssegers) and the [Laravel MongoDB contributors](https://github.com/jenssegers/laravel-mongodb/graphs/contributors) because many of the code and structure of this project came from there.
 
-~~[Doctrine] for abandoning the (CouchDB Client library)[https://github.com/doctrine/couchdb-client]~~
+~~[Doctrine] for abandoning the [https://github.com/doctrine/couchdb-client](CouchDB Client library)~~
 
