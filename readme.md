@@ -18,6 +18,24 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 
 ## Installation
 
+Since the Doctrine has abandoned the [CouchDB Client library](https://github.com/doctrine/couchdb-client), please use my fork of this project where I have added support to [find](http://docs.couchdb.org/en/2.0.0/api/database/find.html) endpoint and the CouchDB v2.0, until a better solution comes up.
+
+Add the following repository in your composer.json
+
+```
+...  
+  "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/robsonvn/couchdb-client"
+        }
+  ],
+  "require": {
+    "doctrine/couchdb": "dev-master",
+...
+```
+
+
 Installation using composer:
 
 ```
