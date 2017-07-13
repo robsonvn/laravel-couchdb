@@ -56,7 +56,7 @@ Change your default database connection name in `config/database.php`:
 'default' => env('DB_CONNECTION', 'couchdb'),
 ```
 
-And add a new mongodb connection:
+And add a new couchdb connection:
 
 ```php
 'couchdb' => [
@@ -161,6 +161,192 @@ And add the service provider in `config/app.php`:
 ```php
 Robsonvn\CouchDB\CouchDBQueueServiceProvider::class,
 ```
+Examples
+--------
+
+### Basic Usage
+
+**Retrieving All Models**
+
+```php
+$users = User::all();
+```
+
+**Retrieving A Record By Primary Key**
+
+```php
+$user = User::find('517c43667db388101e00000f');
+```
+
+**Wheres**
+
+```php
+$users = User::where('votes', '>', 100)->take(10)->get();
+```
+
+**Or Statements**
+
+```php
+$users = User::where('votes', '>', 100)->orWhere('name', 'John')->get();
+```
+
+**And Statements**
+
+```php
+$users = User::where('votes', '>', 100)->where('name', '=', 'John')->get();
+```
+
+**Using Where In With An Array**
+
+```php
+$users = User::whereIn('age', [16, 18, 20])->get();
+```
+
+When using `whereNotIn` objects will be returned if the field is non existent. Combine with `whereNotNull('age')` to leave out those documents.
+
+**Using Where Between**
+
+```php
+$users = User::whereBetween('votes', [1, 100])->get();
+```
+
+**Where null**
+
+```php
+$users = User::whereNull('updated_at')->get();
+```
+
+**Order By**
+
+```php
+$users = User::orderBy('name', 'desc')->get();
+```
+
+**Offset & Limit**
+
+```php
+$users = User::skip(10)->take(5)->get();
+```
+
+**Advanced Wheres**
+
+```php
+$users = User::where('name', '=', 'John')->orWhere(function($query)
+    {
+        $query->where('votes', '>', 100)
+              ->where('title', '<>', 'Admin');
+    })
+    ->get();
+```
+
+**Like (case-sensitive)**
+
+```php
+$user = Comment::where('body', 'like', '%spam%')->get();
+```
+**Like (case-insensitive)**
+
+```php
+$user = Comment::where('body', 'ilike', '%spam%')->get();
+```
+
+**Incrementing or decrementing a value of a column**
+
+Perform increments or decrements (default 1) on specified attributes:
+
+```php
+User::where('name', 'John Doe')->increment('age');
+User::where('name', 'Jaques')->decrement('weight', 50);
+```
+
+The number of updated objects is returned:
+
+```php
+$count = User->increment('age');
+```
+
+You may also specify additional columns to update:
+
+```php
+User::where('age', '29')->increment('age', 1, ['group' => 'thirty something']);
+User::where('bmi', 30)->decrement('bmi', 1, ['category' => 'overweight']);
+```
+
+**Soft deleting**
+
+When soft deleting a model, it is not actually removed from your database. Instead, a deleted_at timestamp is set on the record. To enable soft deletes for a model, apply the SoftDeletingTrait to the model:
+
+```php
+use Robsonvn\CouchDB\Eloquent\SoftDeletes;
+
+class User extends Eloquent {
+
+    use SoftDeletes;
+
+    protected $dates = ['deleted_at'];
+
+}
+```
+
+For more information check http://laravel.com/docs/eloquent#soft-deleting
+
+### CouchDB specific operators
+
+**Exists**
+
+Matches documents that have the specified field.
+
+```php
+User::where('age', 'exists', true)->get();
+```
+
+**All**
+
+Matches arrays that contain all elements specified in the query.
+
+```php
+User::where('roles', 'all', ['moderator', 'author'])->get();
+```
+
+**Size**
+
+Selects documents if the array field is a specified size.
+
+```php
+User::where('tags', 'size', 3)->get();
+```
+
+**Regex**
+
+Selects documents where values match a specified regular expression.
+
+```php
+User::where('name', 'regex', '(?i).*doe$')->get();
+User::where('name', 'not regex', '(?i).*doe$')->get()
+```
+
+**NOTE:** Mango query uses Erlang regular expression implementation.
+
+>Most selector expressions work exactly as you would expect for the given operator. The matching algorithms used by the $regex operator are currently based on the Perl Compatible Regular Expression (PCRE) library. However, not all of the PCRE library is implemented, and some parts of the $regex operator go beyond what PCRE offers. For more information about what is implemented, see the Erlang Regular Expression information http://erlang.org/doc/man/re.html.
+
+
+**Type**
+
+Selects documents if a field is of the specified type. 
+Valid values are "null", "boolean", "number", "string", "array", and "object".
+
+```php
+User::where('age', 'type', 2)->get();
+```
+
+**Mod**
+
+Performs a modulo operation on the value of a field and selects documents with a specified result.
+
+```php
+User::where('age', 'mod', [10, 0])->get();
+```
+
 
 CouchDB Limitations
 ------------
@@ -173,6 +359,7 @@ Limitations
 
 * Due the way we're creating index this library does not work with the Full Text Search engine enabled yet.
 * Aggregation, group by and distinct operations is not supported yet.
+* If you want to use any library that extends the original Eloquent classes you may have to fork it and change to our classes.
 
 
 TODO
