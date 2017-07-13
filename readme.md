@@ -26,7 +26,7 @@ Table of contents
 * [Inserts, updates and deletes](#inserts-updates-and-deletes)
 * [Relations](#relations)
 * [CouchDB specific operators](#couchdb-specific-operators)
-* [Couch Limitations](#couchdb-limitations)
+* [CouchDB Limitations](#couchdb-limitations)
 * [Limitations](#limitations)
 * [TODO](#todo)
 
