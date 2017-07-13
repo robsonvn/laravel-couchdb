@@ -90,10 +90,82 @@ class Book extends Eloquent{
 }
 ```
 
+
+Query Builder
+-------------
+
+The database driver plugs right into the original query builder. When using couchdb connections, you will be able to build fluent queries to perform database operations. For your convenience, there is a `collection` alias for `table` as well as some additional couchdb specific operators/operations.
+
+```php
+$users = DB::collection('users')->get();
+
+$user = DB::collection('users')->where('name', 'John')->first();
+```
+
+If you did not change your default database connection, you will need to specify it when querying.
+
+```php
+$user = DB::connection('couchdb')->collection('users')->get();
+```
+
+Read more about the query builder on http://laravel.com/docs/queries
+
+Extensions
+----------
+
+### Auth
+
+If you want to use Laravel's native Auth functionality, register this included service provider:
+
+```php
+Robsonvn\CouchDB\Auth\PasswordResetServiceProvider::class,
+```
+
+This service provider will slightly modify the internal DatabaseTokenRepository to add support for CouchDB based password reminders. If you don't use password reminders, you don't have to register this service provider and everything else should work just fine.
+
+You also needs to extends the CouchDB Authenticatable class in your User class instead of the native one.
+
+```php
+use Robsonvn\CouchDB\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+}
+```
+
+### Queues
+
+If you want to use CouchDB as your database backend, change the the driver in `config/queue.php`:
+
+```php
+'connections' => [
+    'database' => [
+        'driver' => 'couchdb',
+        'table'  => 'jobs',
+        'queue'  => 'default',
+        'expire' => 60,
+    ],
+```
+
+If you want to use CouchDB to handle failed jobs, change the database in `config/queue.php`:
+
+```php
+'failed' => [
+    'database' => 'couchdb',
+    'table'    => 'failed_jobs',
+    ],
+```
+
+And add the service provider in `config/app.php`:
+
+```php
+Robsonvn\CouchDB\CouchDBQueueServiceProvider::class,
+```
+
 CouchDB Limitations
 ------------
 * Currently, there's no way to update and delete using Mango Query. In this case, we have to query the data, bring it to memory, update the fields and bulk an update.
-* CouchDB is really touchy in matter of indexes, even the documentation recommends to always explicit the index that your query should use. In this case, **we are automatically creating all necessaries index on the fly**.  
+* CouchDB is really touchy in matter of indexes, even the documentation [recommends](http://docs.couchdb.org/en/2.0.0/api/database/find.html#index-selection) to always explicit the index that your query should use. In this case, **we are automatically creating all necessaries index on the fly**.  
 * CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (doc_collection) in every single document. Please, treat doc_collection as a reserved attribute. Use of collections is not optional.
 
 Limitations
@@ -102,12 +174,15 @@ Limitations
 * Due the way we're creating index this library does not work with the Full Text Search engine enabled yet.
 * Aggregation, group by and distinct operations is not supported yet.
 
+
 TODO
 ------------
 
 * Add compatibility to work with Full Text Search engine.
 * Add support to MorphToMany relationship.
 * Add support to aggregation, group by and distinct operations.
+* Create a query cursor.
+* Add support to get casted attribute using doting notation.
 
 ## Special Thanks 
 
