@@ -15,6 +15,18 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 2. CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
 * CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, which directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
 
+Table of contents
+-----------------
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Eloquent](#eloquent)
+* [Query Builder](#query-builder)
+* [Extensions](#extensions)
+* [Examples](#examples)
+* [Inserts, updates and deletes](#inserts-updates-and-deletes)
+* [Relations](#relations)
+* [CouchDB specific operators](#couchdb-specific-operators)
+
 
 ## Installation
 
@@ -346,7 +358,291 @@ Performs a modulo operation on the value of a field and selects documents with a
 ```php
 User::where('age', 'mod', [10, 0])->get();
 ```
+### Inserts, updates and deletes
 
+Inserting, updating and deleting records works just like the original Eloquent.
+
+**Saving a new model**
+
+```php
+$user = new User;
+$user->name = 'John';
+$user->save();
+```
+
+You may also use the create method to save a new model in a single line:
+
+```php
+User::create(['name' => 'John']);
+```
+
+**Updating a model**
+
+To update a model, you may retrieve it, change an attribute, and use the save method.
+
+```php
+$user = User::first();
+$user->email = 'john@foo.com';
+$user->save();
+```
+
+**Deleting a model**
+
+To delete a model, simply call the delete method on the instance:
+
+```php
+$user = User::first();
+$user->delete();
+```
+
+Or deleting a model by its key:
+
+```php
+User::destroy('517c43667db388101e00000f');
+```
+
+For more information about model manipulation, check http://laravel.com/docs/eloquent#insert-update-delete
+
+### Dates
+
+Eloquent allows you to work with Carbon/DateTime object. Internally, these dates will be converted to a formated string 'yyyy-mm-dd H:i:s' when saved to the database. If you wish to use this functionality on non-default date fields you will need to manually specify them as described here: http://laravel.com/docs/eloquent#date-mutators
+
+Example:
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class User extends Eloquent {
+
+    protected $dates = ['birthday'];
+
+}
+```
+
+Which allows you to execute queries like:
+
+```php
+$users = User::where('birthday', '>', new DateTime('-18 years'))->get();
+```
+
+### Relations
+
+Supported relations are:
+
+ - hasOne
+ - hasMany
+ - belongsTo
+ - belongsToMany
+ - embedsOne
+ - embedsMany
+
+Example:
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class User extends Eloquent {
+
+    public function items()
+    {
+        return $this->hasMany('Item');
+    }
+
+}
+```
+
+And the inverse relation:
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class Item extends Eloquent {
+
+    public function user()
+    {
+        return $this->belongsTo('User');
+    }
+
+}
+```
+
+The belongsToMany relation will not use a pivot "table", but will push id's to a __related_ids__ attribute instead. This makes the second parameter for the belongsToMany method useless. If you want to define custom keys for your relation, set it to `null`:
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class User extends Eloquent {
+
+    public function groups()
+    {
+        return $this->belongsToMany('Group', null, 'user_ids', 'group_ids');
+    }
+
+}
+```
+
+
+Other relations are not yet supported, but may be added in the future. Read more about these relations on http://laravel.com/docs/eloquent#relationships
+
+### EmbedsMany Relations
+
+If you want to embed models, rather than referencing them, you can use the `embedsMany` relation. This relation is similar to the `hasMany` relation, but embeds the models inside the parent object.
+
+**REMEMBER**: these relations return Eloquent collections, they don't return query builder objects!
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class User extends Eloquent {
+
+    public function books()
+    {
+        return $this->embedsMany('Book');
+    }
+
+}
+```
+
+You access the embedded models through the dynamic property:
+
+```php
+$books = User::first()->books;
+```
+
+The inverse relation is auto*magically* available, you don't need to define this reverse relation.
+
+```php
+$user = $book->user;
+```
+
+Inserting and updating embedded models works similar to the `hasMany` relation:
+
+```php
+$book = new Book(['title' => 'A Game of Thrones']);
+
+$user = User::first();
+
+$book = $user->books()->save($book);
+// or
+$book = $user->books()->create(['title' => 'A Game of Thrones'])
+```
+
+You can update embedded models using their `save` method:
+
+```php
+$book = $user->books()->first();
+
+$book->title = 'A Game of Thrones';
+
+$book->save();
+```
+
+You can remove an embedded model by using the `destroy` method on the relation, or the `delete` method on the model:
+
+```php
+$book = $user->books()->first();
+
+$book->delete();
+// or
+$user->books()->destroy($book);
+```
+
+If you want to add or remove an embedded model, without touching the database, you can use the `associate` and `dissociate` methods. To eventually write the changes to the database, save the parent object:
+
+```php
+$user->books()->associate($book);
+
+$user->save();
+```
+
+Like other relations, embedsMany assumes the local key of the relationship based on the model name. You can override the default local key by passing a second argument to the embedsMany method:
+
+```php
+return $this->embedsMany('Book', 'local_key');
+```
+
+Embedded relations will return a Collection of embedded items instead of a query builder. Check out the available operations here: https://laravel.com/docs/master/collections
+
+### EmbedsOne Relations
+
+The embedsOne relation is similar to the EmbedsMany relation, but only embeds a single model.
+
+```php
+use Robsonvn\CouchDB\Eloquent\Model as Eloquent;
+
+class Book extends Eloquent {
+
+    public function author()
+    {
+        return $this->embedsOne('Author');
+    }
+
+}
+```
+
+You access the embedded models through the dynamic property:
+
+```php
+$author = Book::first()->author;
+```
+
+Inserting and updating embedded models works similar to the `hasOne` relation:
+
+```php
+$author = new Author(['name' => 'John Doe']);
+
+$book = Books::first();
+
+$author = $book->author()->save($author);
+// or
+$author = $book->author()->create(['name' => 'John Doe']);
+```
+
+You can update the embedded model using the `save` method:
+
+```php
+$author = $book->author;
+
+$author->name = 'Jane Doe';
+$author->save();
+```
+
+You can replace the embedded model with a new model like this:
+
+```php
+$newAuthor = new Author(['name' => 'Jane Doe']);
+$book->author()->save($newAuthor);
+```
+
+### Raw Expressions
+
+These expressions will be injected directly into the query.
+
+```php
+User::whereRaw(['age' => array('$gt' => 30, '$lt' => 40)])->get();
+```
+
+You can also perform raw expressions on the internal CouchDBCollection object. If this is executed on the model class, it will return a collection of models. If this is executed on the query builder, it will return the original response.
+
+```php
+// Returns a collection of User models.
+$models = User::raw(function($collection)
+{
+    return $collection->find(['_id'=>['$gt'=>null]]);
+});
+
+// Returns the original CouchDB response.
+$cursor = DB::collection('users')->raw(function($collection)
+{
+    return $collection->find(['_id'=>['$gt'=>null]]);
+});
+```
+
+The internal CouchDBClient can be accessed like this:
+
+```php
+$client = DB::getCouchDBClient();
+```
 
 CouchDB Limitations
 ------------
