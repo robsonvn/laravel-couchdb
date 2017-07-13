@@ -11,8 +11,8 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 
 ## Good to know before using it
 
-1. This library is under development, so use on your own.
-2. CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
+* This library is under development, so use on your own.
+* CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
 * CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, which directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
 
 Table of contents
