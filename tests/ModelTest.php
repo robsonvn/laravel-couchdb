@@ -3,6 +3,7 @@
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Robsonvn\CouchDB\Eloquent\Model;
+use Doctrine\CouchDB\Mango\MangoQuery;
 
 class ModelTest extends TestCase
 {
@@ -341,6 +342,15 @@ class ModelTest extends TestCase
         $this->assertEquals(1, $sharp->count());
     }
 
+    public function testGetMangoQuery(){
+      $query = User::where('age', '>', 37);
+      $query->first();
+      $mangoQuery = $query->getMangoQuery();
+
+      $this->assertEquals(['age'=>['$gt'=>37,'$lt'=>'a']], $mangoQuery->selector());
+      $this->assertEquals(1, $mangoQuery->limit());
+    }
+
     public function testToArray()
     {
         $item = Item::create(['name' => 'fork', 'type' => 'sharp']);
@@ -542,7 +552,7 @@ class ModelTest extends TestCase
         User::create(['name' => 'Harry Hoe', 'age' => 15]);
 
         $users = User::raw(function ($collection) {
-            return $collection->find(['age' => 35]);
+            return $collection->find(new MangoQuery(['age' => 35]));
         });
 
         $this->assertInstanceOf(Model::class, $users[0]);

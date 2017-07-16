@@ -2,6 +2,8 @@
 
 use Robsonvn\CouchDB\Collection;
 use Robsonvn\CouchDB\Connection;
+use Doctrine\CouchDB\Mango\MangoQuery;
+
 
 class QueryBuilderTest extends TestCase
 {
@@ -233,7 +235,7 @@ class QueryBuilderTest extends TestCase
         ]);
 
         $response = DB::collection('users')->raw(function ($collection) {
-            return $collection->find(['age' => 20]);
+            return $collection->find(new MangoQuery(['age' => 20]));
         });
 
         $this->assertInstanceOf('Doctrine\CouchDB\HTTP\Response', $response);

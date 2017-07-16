@@ -8,6 +8,7 @@ use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Collection;
 use Robsonvn\CouchDB\Connection;
+use Doctrine\CouchDB\Mango\MangoQuery;
 
 class Builder extends BaseBuilder
 {
@@ -233,7 +234,7 @@ protected $conversion = [
       //always sort per doc_collection first
       array_unshift($sort, ['doc_collection'=>$direction]);
 
-        return $sort;
+      return $sort;
     }
 
     public function getIndex()
@@ -302,35 +303,45 @@ protected $conversion = [
         }
     }
 
+    public function getMangoQuery($columns = []){
+
+      if (is_null($this->columns)) {
+          $this->columns = $columns;
+      }
+
+      // Drop all columns if * is present, CouchDB does not work this way.
+      if (in_array('*', $this->columns)) {
+          $this->columns = [];
+      }
+
+      $this->addWhereGreaterThanNullForOrdersField();
+      $wheres = $this->compileWheres();
+
+      $query = new MangoQuery($wheres);
+
+      $query->select($this->columns);
+
+      if($this->offset){
+        $query->skip($this->offset);
+      }
+
+      if($this->limit){
+        $query->limit($this->limit);
+      }
+
+      $query->sort($this->getSort())->use_index($this->getIndex());
+
+      return $query;
+    }
+
     public function get($columns = [], $create_index = true)
     {
-        if (is_null($this->columns)) {
-            $this->columns = $columns;
-        }
-
-        // Drop all columns if * is present, CouchDB does not work this way.
-        if (in_array('*', $this->columns)) {
-            $this->columns = [];
-        }
-
-        $this->addWhereGreaterThanNullForOrdersField();
-        $wheres = $this->compileWheres();
-
-        $skip = ($this->offset) ?: 0;
-
-        $sort = $this->getSort();
-
-        $index = $this->getIndex();
-
-        //TODO create driver cursor
-        $limit = ($this->limit) ?: 25;
-
-        $results = $this->collection->find($wheres, $this->columns, $sort, $limit, $skip, $index);
+        $results = $this->collection->find($this->getMangoQuery($columns));
 
         if ($results->status != 200) {
-            //no-index or no matching fields
+            //No index found when sorting values
             if ($results->status == 500) {
-                //If use automatic index, lets create the index and try one more time
+              //Create request index and try again
               if ($create_index) {
                   if ($this->createIndex()) {
                       return $this->get($columns, false);
@@ -338,6 +349,7 @@ protected $conversion = [
               }
               throw new \Exception('QueryException no-index or no matching fields order/selector');
             }
+
           //TODO improve this exception
           throw new \Exception('QueryException '.$results->body['reason']);
         }

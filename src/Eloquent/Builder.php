@@ -152,6 +152,10 @@ class Builder extends EloquentBuilder
         return $this->query->pull($column, $values);
     }
 
+    public function getMangoQuery(){
+      return $this->query->getMangoQuery();
+    }
+
   /**
    * {@inheritdoc}
    */

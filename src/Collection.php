@@ -2,6 +2,7 @@
 
 namespace Robsonvn\CouchDB;
 
+use Doctrine\CouchDB\Mango\MangoQuery;
 use Robsonvn\CouchDB\Helpers\Arr;
 
 class Collection
@@ -26,9 +27,15 @@ class Collection
 
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
-        //echo json_encode($parameters,JSON_PRETTY_PRINT);
-
         return $result;
+    }
+
+    public function find(MangoQuery $query, $options = null){
+      $selector = $query->selector();
+      $selector['doc_collection'] = $this->collection;
+      $query->selector($selector);
+      $client = $this->connection->getCouchDBClient();
+      return $client->find($query,$options);
     }
 
     public function getName()
@@ -43,7 +50,8 @@ class Collection
         $where['doc_collection'] = $this->collection;
 
         //TODO: change this limit after create cursor
-        $result = $client->find($where, [], [], 999999999);
+        $query = new MangoQuery($where);
+        $result = $client->find($query->limit(9999999999));
 
         if ($result->status == 200) {
             $bulkUpdater = $client->createBulkUpdater();
@@ -90,7 +98,8 @@ class Collection
 
     public function findOne($where)
     {
-        $response = $this->find($where, [], [], 1);
+        $query = new MangoQuery($where);
+        $response = $this->find($query->limit(1));
 
         if ($response->status != 200) {
             return;
@@ -103,8 +112,9 @@ class Collection
 
     public function updateMany($selector, $values, array $options = [])
     {
+        $query = new MangoQuery($selector);
         //TODO: change this limit after create cursor
-        $result = $this->find($selector, [], [], 999999999);
+        $result = $this->find($query->limit(999999999));
 
         if ($result->status == 200) {
             $documents = $result->body['docs'];

@@ -2,7 +2,7 @@
 
 namespace Robsonvn\CouchDB;
 
-use Doctrine\CouchDB\CouchDBClient;
+use Doctrine\CouchDB\MangoClient;
 use Illuminate\Database\Connection as BaseConnection;
 
 class Connection extends BaseConnection
@@ -22,7 +22,7 @@ class Connection extends BaseConnection
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->db = CouchDBClient::create($config);
+        $this->db = MangoClient::create($config);
         $this->useDefaultPostProcessor();
         $this->useDefaultQueryGrammar();
     }
