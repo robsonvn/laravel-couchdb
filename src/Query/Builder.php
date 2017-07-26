@@ -325,6 +325,7 @@ protected $conversion = [
         $query->skip($this->offset);
       }
 
+      $limit = $this->limit ? : 9999999999;
       if($this->limit){
         $query->limit($this->limit);
       }
