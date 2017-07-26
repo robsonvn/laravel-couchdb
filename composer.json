@@ -23,6 +23,7 @@
     "adbario/php-dot-notation": "dev-master"
   },
   "require-dev":{
+    "laravel/passport": "^3.0.0",
     "phpunit/phpunit": "@stable",
     "orchestra/testbench": "^3.1",
     "mockery/mockery": "^0.9"
