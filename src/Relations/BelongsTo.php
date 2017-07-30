@@ -22,15 +22,20 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     /**
      * {@inheritdoc}
      */
-    public function addEagerConstraints(array $models)
-    {
-        // We'll grab the primary key name of the related models since it could be set to
-        // a non-standard name and not "id". We will then construct the constraint for
-        // our eagerly loading query so it returns the proper models from execution.
-        $key = $this->getOwnerKey();
+     public function addEagerConstraints(array $models)
+     {
+         // We'll grab the primary key name of the related models since it could be set to
+         // a non-standard name and not "id". We will then construct the constraint for
+         // our eagerly loading query so it returns the proper models from execution.
+         $key = $this->getOwnerKey();
+         $eager_keys = $this->getEagerModelKeys($models);
 
-        $this->query->whereIn($key, $this->getEagerModelKeys($models));
-    }
+         if($eager_keys === [null]){
+           $eager_keys = [];
+         }
+
+         $this->query->whereIn($key, $eager_keys);
+     }
 
     /**
      * {@inheritdoc}
