@@ -15,12 +15,12 @@
         }
   ],
   "require": {
-    "illuminate/database": "^5.4.23",
-    "illuminate/support": "^5.4.23",
-    "illuminate/container": "^5.4.23",
-    "illuminate/events": "^5.4.23",
+    "illuminate/database": "^5.4",
+    "illuminate/support": "^5.4",
+    "illuminate/container": "^5.4",
+    "illuminate/events": "^5.4",
     "doctrine/couchdb": "dev-master",
-    "adbario/php-dot-notation": "dev-master"
+    "adbario/php-dot-notation": "^1.2"
   },
   "require-dev":{
     "laravel/passport": "^3.0.0",
@@ -39,6 +39,5 @@
            "tests/models",
            "tests/seeds"
        ]
-   },
-  "minimum-stability": "dev"
+   }
 }
