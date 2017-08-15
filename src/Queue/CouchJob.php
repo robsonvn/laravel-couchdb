@@ -25,13 +25,12 @@ class CouchJob extends DatabaseJob
     /**
      * @inheritdoc
      */
-    public function release($delay = 60)
-    {
-        //Release failed job with 60 seconds delay
-        parent::release($delay);
-
-        $this->delete();
-
-        return $this->database->release($this->queue, $this->job, $delay);
-    }
+     public function release($delay = 0)
+     {
+         //Release failed job with 60 seconds of delay
+         if($this->job->attemps>1){
+           $delay +=60;
+         }
+         parent::release($delay);
+     }
 }

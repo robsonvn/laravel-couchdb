@@ -48,7 +48,8 @@ class CouchFailedJobProvider extends DatabaseFailedJobProvider
     {
         $job = $this->getTable()->find($id);
 
-        $job['id'] = (string) $job['_id'];
+        $job = (object) $job;
+        $job->id = $job->_id;
 
         return $job;
     }
