@@ -28,7 +28,7 @@ class CouchJob extends DatabaseJob
      public function release($delay = 0)
      {
          //Release failed job with 60 seconds of delay
-         if($this->job->attemps>1){
+         if($this->job->attempts>1){
            $delay +=60;
          }
          parent::release($delay);
