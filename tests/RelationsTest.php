@@ -27,10 +27,10 @@ class RelationsTest extends TestCase
         $this->assertEquals(2, count($books));
 
         $user = User::create(['name' => 'John Doe']);
-        Item::create(['type' => 'knife', 'user_id' => $user->_id]);
-        Item::create(['type' => 'shield', 'user_id' => $user->_id]);
-        Item::create(['type' => 'sword', 'user_id' => $user->_id]);
-        Item::create(['type' => 'bag', 'user_id' => null]);
+        Item::create(['object_type' => 'knife', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'shield', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'sword', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'bag', 'user_id' => null]);
 
         $items = $user->items;
         $this->assertEquals(3, count($items));
@@ -38,10 +38,10 @@ class RelationsTest extends TestCase
 
     public function testHasManySerialize(){
       $user = User::create(['name' => 'John Doe']);
-      Item::create(['type' => 'knife', 'user_id' => $user->_id]);
-      Item::create(['type' => 'shield', 'user_id' => $user->_id]);
-      Item::create(['type' => 'sword', 'user_id' => $user->_id]);
-      Item::create(['type' => 'bag', 'user_id' => null]);
+      Item::create(['object_type' => 'knife', 'user_id' => $user->_id]);
+      Item::create(['object_type' => 'shield', 'user_id' => $user->_id]);
+      Item::create(['object_type' => 'sword', 'user_id' => $user->_id]);
+      Item::create(['object_type' => 'bag', 'user_id' => null]);
 
       $serialized = serialize($user);
       $unserialized = unserialize($serialized);
@@ -58,7 +58,7 @@ class RelationsTest extends TestCase
         $this->assertEquals('George R. R. Martin', $author->name);
 
         $user = User::create(['name' => 'John Doe']);
-        $item = Item::create(['type' => 'sword', 'user_id' => $user->_id]);
+        $item = Item::create(['object_type' => 'sword', 'user_id' => $user->_id]);
 
         $owner = $item->user;
         $this->assertEquals('John Doe', $owner->name);
@@ -80,33 +80,33 @@ class RelationsTest extends TestCase
     public function testHasOne()
     {
         $user = User::create(['name' => 'John Doe']);
-        Role::create(['type' => 'admin', 'user_id' => $user->_id]);
+        Role::create(['object_type' => 'admin', 'user_id' => $user->_id]);
 
         $role = $user->role;
-        $this->assertEquals('admin', $role->type);
+        $this->assertEquals('admin', $role->object_type);
         $this->assertEquals($user->_id, $role->user_id);
 
         $user = User::create(['name' => 'Jane Doe']);
-        $role = new Role(['type' => 'user']);
+        $role = new Role(['object_type' => 'user']);
         $user->role()->save($role);
 
         $role = $user->role;
-        $this->assertEquals('user', $role->type);
+        $this->assertEquals('user', $role->object_type);
         $this->assertEquals($user->_id, $role->user_id);
 
         $user = User::where('name', 'Jane Doe')->first();
         $role = $user->role;
-        $this->assertEquals('user', $role->type);
+        $this->assertEquals('user', $role->object_type);
         $this->assertEquals($user->_id, $role->user_id);
     }
 
     public function testWithBelongsTo()
     {
         $user = User::create(['name' => 'John Doe']);
-        Item::create(['type' => 'knife', 'user_id' => $user->_id]);
-        Item::create(['type' => 'shield', 'user_id' => $user->_id]);
-        Item::create(['type' => 'sword', 'user_id' => $user->_id]);
-        Item::create(['type' => 'bag', 'user_id' => null]);
+        Item::create(['object_type' => 'knife', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'shield', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'sword', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'bag', 'user_id' => null]);
 
         $items = Item::with('user')->orderBy('user_id', 'desc')->get();
 
@@ -120,10 +120,10 @@ class RelationsTest extends TestCase
     public function testWithHashMany()
     {
         $user = User::create(['name' => 'John Doe']);
-        Item::create(['type' => 'knife', 'user_id' => $user->_id]);
-        Item::create(['type' => 'shield', 'user_id' => $user->_id]);
-        Item::create(['type' => 'sword', 'user_id' => $user->_id]);
-        Item::create(['type' => 'bag', 'user_id' => null]);
+        Item::create(['object_type' => 'knife', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'shield', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'sword', 'user_id' => $user->_id]);
+        Item::create(['object_type' => 'bag', 'user_id' => null]);
 
         $user = User::with('items')->find($user->_id);
 
@@ -135,21 +135,21 @@ class RelationsTest extends TestCase
     public function testWithHasOne()
     {
         $user = User::create(['name' => 'John Doe']);
-        Role::create(['type' => 'admin', 'user_id' => $user->_id]);
-        Role::create(['type' => 'guest', 'user_id' => $user->_id]);
+        Role::create(['object_type' => 'admin', 'user_id' => $user->_id]);
+        Role::create(['object_type' => 'guest', 'user_id' => $user->_id]);
 
         $user = User::with('role')->find($user->_id);
 
         $role = $user->getRelation('role');
         $this->assertInstanceOf('Role', $role);
-        $this->assertEquals('admin', $role->type);
+        $this->assertEquals('admin', $role->object_type);
     }
 
     public function testEasyRelation()
     {
         // Has Many
         $user = User::create(['name' => 'John Doe']);
-        $item = Item::create(['type' => 'knife']);
+        $item = Item::create(['object_type' => 'knife']);
         $user->items()->save($item);
 
         $user = User::find($user->_id);
@@ -160,13 +160,13 @@ class RelationsTest extends TestCase
 
         // Has one
         $user = User::create(['name' => 'John Doe']);
-        $role = Role::create(['type' => 'admin']);
+        $role = Role::create(['object_type' => 'admin']);
         $user->role()->save($role);
 
         $user = User::find($user->_id);
         $role = $user->role;
         $this->assertInstanceOf('Role', $role);
-        $this->assertEquals('admin', $role->type);
+        $this->assertEquals('admin', $role->object_type);
         $this->assertEquals($user->_id, $role->user_id);
     }
 

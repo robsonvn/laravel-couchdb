@@ -334,8 +334,8 @@ class ModelTest extends TestCase
     public function testScope()
     {
         Item::insert([
-            ['name' => 'knife', 'type' => 'sharp'],
-            ['name' => 'spoon', 'type' => 'round'],
+            ['name' => 'knife', 'object_type' => 'sharp'],
+            ['name' => 'spoon', 'object_type' => 'round'],
         ]);
 
         $sharp = Item::sharp()->get();
@@ -353,14 +353,14 @@ class ModelTest extends TestCase
 
     public function testToArray()
     {
-        $item = Item::create(['name' => 'fork', 'type' => 'sharp']);
+        $item = Item::create(['name' => 'fork', 'object_type' => 'sharp']);
 
         $array = $item->toArray();
 
         $keys = array_keys($array);
         sort($keys);
 
-        $this->assertEquals(['_id', '_rev', 'created_at', 'name', 'type', 'updated_at'], $keys);
+        $this->assertEquals(['_id', '_rev', 'created_at', 'name', 'object_type', 'updated_at'], $keys);
         $this->assertTrue(is_string($array['created_at']));
         $this->assertTrue(is_string($array['updated_at']));
         $this->assertTrue(is_string($array['_id']));

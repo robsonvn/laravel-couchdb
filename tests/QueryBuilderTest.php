@@ -65,7 +65,7 @@ class QueryBuilderTest extends TestCase
     {
         $collection = new Collection(DB::connection('couchdb'), 'users');
 
-        $collection->createMangoIndex([['doc_collection'=>'desc'], ['name'=>'desc']], 'unit-test');
+        $collection->createMangoIndex([['type'=>'desc'], ['name'=>'desc']], 'unit-test');
         DB::collection('users')->insert(['name' => 'John Doe', 'id'=>'test']);
 
         $users = DB::collection('users')->orderBy('name', 'desc')->useIndex(['_design/mango-indexes', 'unit-test'])->get();
@@ -365,10 +365,10 @@ class QueryBuilderTest extends TestCase
     {
         $this->markTestSkipped('distinct not implemented yet');
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp'],
-            ['name' => 'fork',  'type' => 'sharp'],
-            ['name' => 'spoon', 'type' => 'round'],
-            ['name' => 'spoon', 'type' => 'round'],
+            ['name' => 'knife', 'object_type' => 'sharp'],
+            ['name' => 'fork',  'object_type' => 'sharp'],
+            ['name' => 'spoon', 'object_type' => 'round'],
+            ['name' => 'spoon', 'object_type' => 'round'],
         ]);
 
         $items = DB::collection('items')->distinct('name')->get()->toArray();
@@ -376,18 +376,18 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(3, count($items));
         $this->assertEquals(['fork', 'knife', 'spoon'], $items);
 
-        $types = DB::collection('items')->distinct('type')->get()->toArray();
-        sort($types);
-        $this->assertEquals(2, count($types));
-        $this->assertEquals(['round', 'sharp'], $types);
+        $object_types = DB::collection('items')->distinct('object_type')->get()->toArray();
+        sort($object_types);
+        $this->assertEquals(2, count($object_types));
+        $this->assertEquals(['round', 'sharp'], $object_types);
     }
 
     public function testCustomId()
     {
         DB::collection('items')->insert([
-            ['_id' => 'knife', 'type' => 'sharp', 'amount' => 34],
-            ['_id' => 'fork',  'type' => 'sharp', 'amount' => 20],
-            ['_id' => 'spoon', 'type' => 'round', 'amount' => 3],
+            ['_id' => 'knife', 'object_type' => 'sharp', 'amount' => 34],
+            ['_id' => 'fork',  'object_type' => 'sharp', 'amount' => 20],
+            ['_id' => 'spoon', 'object_type' => 'round', 'amount' => 3],
         ]);
 
         $item = DB::collection('items')->find('knife');
@@ -409,10 +409,10 @@ class QueryBuilderTest extends TestCase
     public function testTake()
     {
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34, 'id'=>'15'],
-            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20, 'id'=>'16'],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 14, 'id'=>'17'],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 3, 'id'=>'20'],
+            ['name' => 'knife', 'object_type' => 'sharp', 'amount' => 34, 'id'=>'15'],
+            ['name' => 'fork',  'object_type' => 'sharp', 'amount' => 20, 'id'=>'16'],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 14, 'id'=>'17'],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 3, 'id'=>'20'],
         ]);
 
         $items = DB::collection('items')->orderBy('name')->take(2)->get();
@@ -424,10 +424,10 @@ class QueryBuilderTest extends TestCase
     public function testSkip()
     {
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34],
-            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 3],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 14],
+            ['name' => 'knife', 'object_type' => 'sharp', 'amount' => 34],
+            ['name' => 'fork',  'object_type' => 'sharp', 'amount' => 20],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 3],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 14],
         ]);
 
         $items = DB::collection('items')->orderBy('name')->skip(2)->get();
@@ -450,10 +450,10 @@ class QueryBuilderTest extends TestCase
     public function testList()
     {
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34],
-            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 3],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 14],
+            ['name' => 'knife', 'object_type' => 'sharp', 'amount' => 34],
+            ['name' => 'fork',  'object_type' => 'sharp', 'amount' => 20],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 3],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 14],
         ]);
 
         $list = DB::collection('items')->pluck('name')->toArray();
@@ -461,7 +461,7 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals(4, count($list));
         $this->assertEquals(['fork', 'knife', 'spoon', 'spoon'], $list);
 
-        $list = DB::collection('items')->pluck('type', 'name')->toArray();
+        $list = DB::collection('items')->pluck('object_type', 'name')->toArray();
         $this->assertEquals(3, count($list));
         $this->assertEquals(['knife' => 'sharp', 'fork' => 'sharp', 'spoon' => 'round'], $list);
 
@@ -475,10 +475,10 @@ class QueryBuilderTest extends TestCase
     {
         $this->markTestSkipped('agregation , not implemented yet');
         DB::collection('items')->insert([
-            ['name' => 'knife', 'type' => 'sharp', 'amount' => 34],
-            ['name' => 'fork',  'type' => 'sharp', 'amount' => 20],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 3],
-            ['name' => 'spoon', 'type' => 'round', 'amount' => 14],
+            ['name' => 'knife', 'object_type' => 'sharp', 'amount' => 34],
+            ['name' => 'fork',  'object_type' => 'sharp', 'amount' => 20],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 3],
+            ['name' => 'spoon', 'object_type' => 'round', 'amount' => 14],
         ]);
 
         $this->assertEquals(71, DB::collection('items')->sum('amount'));

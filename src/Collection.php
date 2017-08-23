@@ -23,7 +23,7 @@ class Collection
 
     public function __call($method, $parameters)
     {
-        $parameters[0]['doc_collection'] = $this->collection;
+        $parameters[0]['type'] = $this->collection;
 
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
@@ -32,7 +32,7 @@ class Collection
 
     public function find(MangoQuery $query, $options = null){
       $selector = $query->selector();
-      $selector['doc_collection'] = $this->collection;
+      $selector['type'] = $this->collection;
       $query->selector($selector);
       $client = $this->connection->getCouchDBClient();
       return $client->find($query,$options);
@@ -47,7 +47,7 @@ class Collection
     {
         $deleted = 0;
         $client = $this->connection->getCouchDBClient();
-        $where['doc_collection'] = $this->collection;
+        $where['type'] = $this->collection;
 
         //TODO: change this limit after create cursor
         $query = new MangoQuery($where);
@@ -72,9 +72,9 @@ class Collection
 
     public function insertMany($values)
     {
-        //Force doc_collection
+        //Force type
         foreach ($values as &$value) {
-            $value['doc_collection'] = $this->collection;
+            $value['type'] = $this->collection;
         }
 
         $client = $this->connection->getCouchDBClient();

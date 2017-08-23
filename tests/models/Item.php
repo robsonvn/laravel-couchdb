@@ -14,6 +14,6 @@ class Item extends Eloquent
 
     public function scopeSharp($query)
     {
-        return $query->where('type', 'sharp');
+        return $query->where('object_type', 'sharp');
     }
 }

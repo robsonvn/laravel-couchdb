@@ -231,8 +231,8 @@ protected $conversion = [
           list($direction) = $direction;
       }
 
-      //always sort per doc_collection first
-      array_unshift($sort, ['doc_collection'=>$direction]);
+      //always sort per type first
+      array_unshift($sort, ['type'=>$direction]);
 
       return $sort;
     }

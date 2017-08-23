@@ -6,7 +6,7 @@
 
 Inspired on [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb)
 
-Laravel CouchDB is an Eloquent model and Query builder with support for **CouchDB 2.0**, using the original Laravel API. This library extends the original Laravel classes, so it uses exactly the same methods.
+Laravel CouchDB is an Eloquent model and Query builder with support for **CouchDB 2.x**, using the original Laravel API. This library extends the original Laravel classes, so it uses exactly the same methods.
 
 
 ## Good to know before using it
@@ -654,7 +654,7 @@ CouchDB Limitations
 ------------
 * Currently, there's no way to update and delete using Mango Query. In this case, we have to query the data, bring it to memory, update the fields and bulk an update.
 * CouchDB is really touchy in matter of indexes, even the documentation [recommends](http://docs.couchdb.org/en/2.0.0/api/database/find.html#index-selection) to always explicit the index that your query should use. In this case, **we are automatically creating all necessaries index on the fly**.  
-* CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (doc_collection) in every single document. Please, treat doc_collection as a reserved attribute. Use of collections is not optional.
+* CouchDB does not have the concept of collection as MongoDB, so we are using "collections" by adding an attribute (type) in every single document. Please, treat type as a reserved attribute. Use of collections is not optional.
 
 Limitations
 ------------
