@@ -77,15 +77,27 @@ Change your default database connection name in `config/database.php`:
 And add a new couchdb connection:
 
 ```php
-'couchdb' => [
+'couchdb' => [    
     'driver'   => 'couchdb',
+    'type'     => env('DB_CONNECTION_TYPE', 'socket'),
     'host'     => env('DB_HOST', 'localhost'),
-    'port'     => env('DB_PORT', 5984),
-    'database' => env('DB_DATABASE'),
-    'username' => env('DB_USERNAME'),
-    'password' => env('DB_PASSWORD')
+    'ip'       => env('DB_IP', null),
+    'port'     => env('DB_PORT', '5984'),
+    'dbname'   => env('DB_DATABASE', 'forge'),
+    'user'     => env('DB_USERNAME', null),
+    'password' => env('DB_PASSWORD', null),
+    'logging'  => env('DB_LOGGING', false),
 ],
 ```
+
+And this on yours .env file
+
+DB_CONNECTION=couchdb
+DB_HOST=127.0.0.1
+DB_PORT=5984
+DB_DATABASE=dbname
+DB_USERNAME=
+DB_PASSWORD=
 
 Eloquent
 --------
