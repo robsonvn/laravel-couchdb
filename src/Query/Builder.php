@@ -33,6 +33,12 @@ public $projections;
  */
 public $timeout;
 
+/*
+  Set this default (max 32bits) value due CouchDB limit default value is 25
+*/
+public $limit = 2147483647;
+
+
 /**
  * The cursor hint value.
  *
@@ -325,7 +331,6 @@ protected $conversion = [
         $query->skip($this->offset);
       }
 
-      $limit = $this->limit ? : 9999999999;
       if($this->limit){
         $query->limit($this->limit);
       }
