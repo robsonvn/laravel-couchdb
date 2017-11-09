@@ -5,7 +5,6 @@ class RelationsTest extends TestCase
     public function tearDown()
     {
         Mockery::close();
-
         User::truncate();
         Client::truncate();
         Address::truncate();
@@ -15,6 +14,10 @@ class RelationsTest extends TestCase
         Client::truncate();
         Group::truncate();
         Photo::truncate();
+        Tag::truncate();
+        Movie::truncate();
+        DB::collection('taggables')->truncate();
+        DB::collection('book_tag')->truncate();
     }
 
     public function testHasMany()
@@ -552,5 +555,46 @@ class RelationsTest extends TestCase
         $this->assertEquals(1, $user->clients()->count());
         $this->assertEquals([$user->_id], $client->user_ids);
         $this->assertEquals([$client->_id], $user->client_ids);
+    }
+
+    public function testManyToMany(){
+      $tag = Tag::create(['name'=>'Commedy']);
+
+      $book = Book::create(['title' => 'Decline and Fall']);
+      $movie = Movie::create(['title' => 'White Chicks']);
+
+      $movie->tags()->attach($tag);
+      $this->assertEquals(1,count($movie->tags));
+
+      //Get fresh instance
+      $movie = Movie::find($movie->id);
+      $this->assertEquals(1,count($movie->tags));
+
+      $book->tags()->attach($tag);
+      $this->assertEquals(1,count($book->tags));
+
+      //Get fresh instance
+      $book = book::find($book->id);
+      $this->assertEquals(1,count($book->tags));
+
+      $this->assertEquals(1,count($tag->books));
+      $this->assertEquals(1,count($tag->movies));
+
+      $movie2 = Movie::create(['title' => 'Dumb and Dumber']);
+
+      $tag->movies()->attach($movie2);
+
+      //Get fresh instance
+      $tag = Tag::find($tag->_id);
+      $this->assertEquals(2,count($tag->movies));
+
+      $tag2 = Tag::create(['name'=>'Action']);
+
+      $movie3 = Movie::create(['title' => 'Rambo']);
+      $movie3->tags()->attach($tag2);
+
+      $this->assertEquals(1,count($tag2->movies));
+      $this->assertEquals(1,count($movie3->tags));
+
     }
 }

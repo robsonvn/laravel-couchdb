@@ -10,6 +10,7 @@ use Robsonvn\CouchDB\Relations\BelongsToMany;
 use Robsonvn\CouchDB\Relations\HasMany;
 use Robsonvn\CouchDB\Relations\HasOne;
 use Robsonvn\CouchDB\Relations\MorphTo;
+use Robsonvn\CouchDB\Relations\MorphToMany;
 
 trait HybridRelations
 {
@@ -63,6 +64,35 @@ trait HybridRelations
         $localKey = $localKey ?: $this->getKeyName();
 
         return new MorphOne($instance->newQuery(), $this, $type, $id, $localKey);
+    }
+
+    public function morphToMany($related, $name, $table = null, $foreignKey = null, $relatedKey = null, $inverse = false)
+    {
+      // Check if it is a relation with an original model.
+      if (!is_subclass_of($related, \Robsonvn\CouchDB\Eloquent\Model::class)) {
+          return parent::morphToMany($related, $name, $table, $foreignKey, $relatedKey, $inverse);
+      }
+
+      $caller = $this->guessBelongsToManyRelation();
+
+      // First, we will need to determine the foreign key and "other key" for the
+      // relationship. Once we have determined the keys we will make the query
+      // instances, as well as the relationship instances we need for these.
+      $instance = $this->newRelatedInstance($related);
+
+      $foreignKey = $foreignKey ?: $name.'_id';
+
+      $relatedKey = $relatedKey ?: $instance->getForeignKey();
+
+      // Now we're ready to create a new query builder for this related model and
+      // the relationship instances for this relation. This relations will set
+      // appropriate query constraints then entirely manages the hydrations.
+      $table = $table ?: Str::plural($name);
+
+      return new MorphToMany(
+          $instance->newQuery(), $this, $name, $table,
+          $foreignKey, $relatedKey, $caller, $inverse
+      );
     }
 
     /**

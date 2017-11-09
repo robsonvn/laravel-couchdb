@@ -16,4 +16,9 @@ class Book extends Eloquent
     {
         return $this->belongsTo('MysqlUser', 'author_id');
     }
+
+    public function tags()
+    {
+        return $this->morphToMany('Tag', 'book','book_tag','book_id','tag_id');
+    }
 }
