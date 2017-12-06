@@ -346,7 +346,9 @@ protected $conversion = [
 
         if ($results->status != 200) {
             //No index found when sorting values
-            if ($results->status == 500) {
+            //500 for CouchDB < 2.1.0;
+            //400 for CouchDB ~2.1.1
+            if ($results->status == 500 || $results->status == 400 ) {
               //Create request index and try again
               if ($create_index) {
                   if ($this->createIndex()) {
