@@ -17,55 +17,49 @@ class Builder extends BaseBuilder
  *
  * @var string
  */
-protected $collection;
+    protected $collection;
 
-/**
- * The column projections.
- *
- * @var array
- */
-public $projections;
+    /**
+     * The column projections.
+     *
+     * @var array
+     */
+    public $projections;
 
-/**
- * The cursor timeout value.
- *
- * @var int
- */
-public $timeout;
+    /**
+     * The cursor timeout value.
+     *
+     * @var int
+     */
+    public $timeout;
 
-/*
-  Set this default (max 32bits) value due CouchDB limit default value is 25
-*/
-public $limit = 2147483647;
+    /**
+     * The cursor hint value.
+     *
+     * @var int
+     */
+    public $hint;
 
+    /**
+     * Custom options to add to the query.
+     *
+     * @var array
+     */
+    public $options = [];
 
-/**
- * The cursor hint value.
- *
- * @var int
- */
-public $hint;
+    /**
+     * Indicate if we are executing a pagination query.
+     *
+     * @var bool
+     */
+    public $paginating = false;
 
-/**
- * Custom options to add to the query.
- *
- * @var array
- */
-public $options = [];
-
-/**
- * Indicate if we are executing a pagination query.
- *
- * @var bool
- */
-public $paginating = false;
-
-/**
- * All of the available clause operators.
- *
- * @var array
- */
-public $operators = [
+    /**
+     * All of the available clause operators.
+     *
+     * @var array
+     */
+    public $operators = [
     '=',
     '<',
     '>',
@@ -89,14 +83,14 @@ public $operators = [
     'regex',
     'not regex',
     'elemmatch',
-];
+    ];
 
-/**
- * Operator conversion.
- *
- * @var array
- */
-protected $conversion = [
+    /**
+     * Operator conversion.
+     *
+     * @var array
+     */
+    protected $conversion = [
     '='  => '=',
     '!=' => '$ne',
     '<>' => '$ne',
@@ -104,7 +98,7 @@ protected $conversion = [
     '<=' => '$lte',
     '>'  => '$gt',
     '>=' => '$gte',
-];
+    ];
 
     protected $useCollections;
 
@@ -125,8 +119,8 @@ protected $conversion = [
     public function insert(array $values)
     {
         // Since every insert gets treated like a batch insert, we will have to detect
-      // if the user is inserting a single document or an array of documents.
-      $batch = true;
+        // if the user is inserting a single document or an array of documents.
+        $batch = true;
 
         foreach ($values as $value) {
             // As soon as we find a value that is not an array we assume the user is
@@ -158,7 +152,7 @@ protected $conversion = [
     public function count($columns = ['*'])
     {
         //TODO: add support to aggregate function
-      return $this->get()->count();
+        return $this->get()->count();
     }
 
     public function newQuery()
@@ -176,7 +170,12 @@ protected $conversion = [
 
     protected function performUpdate($values, array $options = [])
     {
-        return $this->collection->updateMany($this->compileWheres(), $values, $options);
+        $useCollection = $this->useCollections;
+        $this->useCollections = false;
+        //Retrive raw documents
+        $rawDocuments = $this->get();
+        $this->useCollections = $useCollection;
+        return $this->collection->updateMany($rawDocuments, $values, $options);
     }
 
     /**
@@ -204,7 +203,33 @@ protected $conversion = [
      */
     public function truncate()
     {
-         return $this->collection->deleteMany($this->compileWheres());
+        return $this->collection->deleteMany($this->compileWheres());
+    }
+
+    public function getSort()
+    {
+
+        $sort = [];
+        if (isset($this->orders) && is_array($this->orders)) {
+            $sort = array_map(function ($key, $value) {
+                return [$key =>$value];
+            }, array_keys($this->orders), $this->orders);
+        }
+        $direction = 'asc';
+
+        //CouchDB 2.0 currently only support a single direction for all fields
+        if (count($this->orders)) {
+            $direction = array_unique(array_values($this->orders));
+            if (count($direction) > 1) {
+                throw new \Exception('Sorts currently only support a single direction for all fields.');
+            }
+            list($direction) = $direction;
+        }
+
+        //always sort per type first
+        array_unshift($sort, ['type'=>$direction]);
+
+        return $sort;
     }
 
     protected function createIndex()
@@ -222,33 +247,12 @@ protected $conversion = [
         return $this;
     }
 
-    public function getSort()
-    {
-        $sort = isset($this->orders) ? [$this->orders] : [];
-
-        $direction = 'asc';
-
-      //CouchDB 2.0 currently only support a single direction for all fields
-      if (count($this->orders)) {
-          $direction = array_unique(array_values($this->orders));
-          if (count($direction) > 1) {
-              throw new \Exception('Sorts currently only support a single direction for all fields.');
-          }
-          list($direction) = $direction;
-      }
-
-      //always sort per type first
-      array_unshift($sort, ['type'=>$direction]);
-
-      return $sort;
-    }
-
     public function getIndex()
     {
         //Use index defined by user otherwise guess which index use
-      if (isset($this->index)) {
-          return $this->index;
-      }
+        if (isset($this->index)) {
+            return $this->index;
+        }
 
         return ['_design/mango-indexes', $this->resolveIndexName($this->getSort())];
     }
@@ -268,15 +272,16 @@ protected $conversion = [
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
+
         if (is_null($value) && $operator == '>=') {
             $this->wheres[] = [
-          'type'    => 'Basic',
-          'operator'=> '>=',
-          'column'  => $column,
-          'value'   => null,
-          'boolean' => $boolean,
+              'type'    => 'Basic',
+              'operator'=> '>=',
+              'column'  => $column,
+              'value'   => null,
+              'boolean' => $boolean,
 
-        ];
+            ];
 
             return $this;
         }
@@ -309,35 +314,33 @@ protected $conversion = [
         }
     }
 
-    public function getMangoQuery($columns = []){
+    public function getMangoQuery($columns = [])
+    {
+        if (is_null($this->columns)) {
+            $this->columns = $columns;
+        }
 
-      if (is_null($this->columns)) {
-          $this->columns = $columns;
-      }
+        // Drop all columns if * is present, CouchDB does not work this way.
+        if (in_array('*', $this->columns)) {
+            $this->columns = [];
+        }
 
-      // Drop all columns if * is present, CouchDB does not work this way.
-      if (in_array('*', $this->columns)) {
-          $this->columns = [];
-      }
+        $this->addWhereGreaterThanNullForOrdersField();
+        $wheres = $this->compileWheres();
 
-      $this->addWhereGreaterThanNullForOrdersField();
-      $wheres = $this->compileWheres();
+        $query = new MangoQuery($wheres);
 
-      $query = new MangoQuery($wheres);
+        $query->select($this->columns);
 
-      $query->select($this->columns);
+        if ($this->offset) {
+            $query->skip($this->offset);
+        }
 
-      if($this->offset){
-        $query->skip($this->offset);
-      }
+        $query->limit($this->limit ?? PHP_INT_MAX);
 
-      if($this->limit){
-        $query->limit($this->limit);
-      }
+        $query->sort($this->getSort())->use_index($this->getIndex());
 
-      $query->sort($this->getSort())->use_index($this->getIndex());
-
-      return $query;
+        return $query;
     }
 
     public function get($columns = [], $create_index = true)
@@ -348,18 +351,18 @@ protected $conversion = [
             //No index found when sorting values
             //500 for CouchDB < 2.1.0;
             //400 for CouchDB ~2.1.1
-            if ($results->status == 500 || $results->status == 400 ) {
-              //Create request index and try again
-              if ($create_index) {
-                  if ($this->createIndex()) {
-                      return $this->get($columns, false);
-                  }
-              }
-              throw new \Exception('QueryException no-index or no matching fields order/selector');
+            if ($results->status == 500 || $results->status == 400) {
+                //Create request index and try again
+                if ($create_index) {
+                    if ($this->createIndex()) {
+                        return $this->get($columns, false);
+                    }
+                }
+                throw new \Exception('QueryException no-index or no matching fields order/selector');
             }
 
-          //TODO improve this exception
-          throw new \Exception('QueryException '.$results->body['reason']);
+            //TODO improve this exception
+            throw new \Exception('QueryException '.$results->body['reason']);
         }
 
         $results = $results->body['docs'];
@@ -401,13 +404,17 @@ protected $conversion = [
     protected function compileWheres()
     {
         // The wheres to compile.
+        $this->where('type', '=', (string) $this->collection);
         $wheres = is_array($this->wheres) ? $this->wheres : [];
 
         // We will add all compiled wheres to this array.
+
         $compiled = [];
 
-        foreach ($wheres as $i => &$where) {
 
+        //$compiled['$and'][] = [ 'type'=> (string) $this->collection ];
+
+        foreach ($wheres as $i => &$where) {
             if (isset($where['operator']) && in_array($where['operator'], ['>', '>=', '<', '<='])) {
                 $value_type = $this->getDatabaseEquivalentDataType($where['value']);
                 if ($value_type == 'number') {
@@ -458,14 +465,13 @@ protected $conversion = [
 
             $result = $this->{$method}($where);
 
+
             // Wrap the where with an $or operator.
             if ($where['boolean'] == 'or') {
                 $result = ['$or' => [$result]];
-            }
-
-            // If there are multiple wheres, we will wrap it with $and. This is needed
-            // to make nested wheres work.
-            elseif (count($wheres) > 1) {
+            } elseif (count($wheres) > 1) {
+                // If there are multiple wheres, we will wrap it with $and. This is needed
+                // to make nested wheres work.
                 $result = ['$and' => [$result]];
             }
 
@@ -473,6 +479,7 @@ protected $conversion = [
             $compiled = array_merge_recursive($compiled, $result);
         }
 
+        //
         return $compiled;
     }
 
@@ -489,7 +496,6 @@ protected $conversion = [
 
         // Replace like with a Regex instance.
         if (in_array($operator, ['like', 'not like', 'ilike', 'not ilike'])) {
-
             // Convert to regular expression.
             $regex = preg_replace('#(^|[^\\\])%#', '$1.*', preg_quote($value));
 
@@ -524,102 +530,103 @@ protected $conversion = [
         return $query;
     }
 
-/**
- * @param array $where
- *
- * @return mixed
- */
-protected function compileWhereRaw(array $where)
-{
-    return $where['sql'];
-}
-
-  /**
-   * @param array $where
-   *
-   * @return array
-   */
-  protected function compileWhereIn(array $where)
-  {
-      extract($where);
-
-      return [$column => ['$in' => array_values($values)]];
-  }
-
-  /**
-   * @param array $where
-   *
-   * @return array
-   */
-  protected function compileWhereNotIn(array $where)
-  {
-      extract($where);
-
-      return [$column => ['$nin' => array_values($values)]];
-  }
-
-  /**
-   * @param array $where
-   *
-   * @return array
-   */
-  protected function compileWhereNull(array $where)
-  {
-      $where['operator'] = '=';
-      $where['value'] = null;
-
-      return $this->compileWhereBasic($where);
-  }
-
-  /**
-   * @param array $where
-   *
-   * @return array
-   */
-  protected function compileWhereNotNull(array $where)
-  {
-      $where['operator'] = '>';
-      $where['value'] = null;
-
-      return $this->compileWhereBasic($where);
-  }
-
-  /**
-  * CouchDB collation order considers null, false and true less than an integer and any letter greater than an integer
-  * To avoid unexpected results, lets define a scope for numbers where a > number > true
-  * http://docs.couchdb.org/en/2.0.0/couchapp/views/collation.html
-  * @param array $where
-  * @return array
-  */
-  protected function compileWhereNumberComparison(array $where){
-    extract($where);
-
-    if(starts_with($operator,'>')){
-      $aux_operator = '$lt';
-      $aux_value  = 'a';
-    }else{
-      $aux_operator = '$gt';
-      $aux_value  = true;
+    /**
+     * @param array $where
+     *
+     * @return mixed
+     */
+    protected function compileWhereRaw(array $where)
+    {
+        return $where['sql'];
     }
 
-    return [
+    /**
+     * @param array $where
+     *
+     * @return array
+     */
+    protected function compileWhereIn(array $where)
+    {
+        extract($where);
+
+        return [$column => ['$in' => array_values($values)]];
+    }
+
+    /**
+     * @param array $where
+     *
+     * @return array
+     */
+    protected function compileWhereNotIn(array $where)
+    {
+        extract($where);
+
+        return [$column => ['$nin' => array_values($values)]];
+    }
+
+    /**
+     * @param array $where
+     *
+     * @return array
+     */
+    protected function compileWhereNull(array $where)
+    {
+        $where['operator'] = '=';
+        $where['value'] = null;
+
+        return $this->compileWhereBasic($where);
+    }
+
+    /**
+     * @param array $where
+     *
+     * @return array
+     */
+    protected function compileWhereNotNull(array $where)
+    {
+        $where['operator'] = '>';
+        $where['value'] = null;
+
+        return $this->compileWhereBasic($where);
+    }
+
+    /**
+    * CouchDB collation order considers null, false and true less than an integer and any letter greater than an integer
+    * To avoid unexpected results, lets define a scope for numbers where a > number > true
+    * http://docs.couchdb.org/en/2.0.0/couchapp/views/collation.html
+    * @param array $where
+    * @return array
+    */
+    protected function compileWhereNumberComparison(array $where)
+    {
+        extract($where);
+
+        if (starts_with($operator, '>')) {
+            $aux_operator = '$lt';
+            $aux_value  = 'a';
+        } else {
+            $aux_operator = '$gt';
+            $aux_value  = true;
+        }
+
+        return [
         $column => [
              $this->conversion[$operator] => $value,
              $aux_operator => $aux_value,
         ],
     ];
-  }
-  /**
-   * @param array $where
-   *
-   * @return array
-   */
-  protected function compileWhereBetween(array $where)
-  {
-      extract($where);
+    }
+    /**
+     * @param array $where
+     *
+     * @return array
+     */
+    protected function compileWhereBetween(array $where)
+    {
+        extract($where);
 
-      if ($not) {
-          return [
+        if ($not) {
+            return [
               '$or' => [
                   [
                       $column => [
@@ -636,190 +643,193 @@ protected function compileWhereRaw(array $where)
               '$type'=> $this->getDatabaseEquivalentDataType($values[0]),
             ],
           ];
-      } else {
-          return [
+        } else {
+            return [
               $column => [
                   '$gte' => $values[0],
                   '$lte' => $values[1],
               ],
           ];
-      }
-  }
+        }
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function delete($id = null)
-  {
-      // If an ID is passed to the method, we will set the where clause to check
-      // the ID to allow developers to simply and quickly remove a single row
-      // from their database without manually specifying the where clauses.
-      if (!is_null($id)) {
-          $this->where('_id', '=', $id);
-      }
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($id = null)
+    {
+        // If an ID is passed to the method, we will set the where clause to check
+        // the ID to allow developers to simply and quickly remove a single row
+        // from their database without manually specifying the where clauses.
+        if (!is_null($id)) {
+            $this->where('_id', '=', $id);
+        }
 
-      $wheres = $this->compileWheres();
+        $useCollection = $this->useCollections;
+        $this->useCollections = false;
+        //Retrive raw documents
+        $rawDocuments = $this->get();
+        $this->useCollections = $useCollection;
+        return $this->collection->deleteMany($rawDocuments);
+    }
 
-      return $this->collection->DeleteMany($wheres);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function raw($expression = null)
+    {
+        // Execute the closure on the mongodb collection
+        if ($expression instanceof Closure) {
+            return call_user_func($expression, $this->collection);
+        } // Create an expression for the given value
+        elseif (!is_null($expression)) {
+            return new Expression($expression);
+        }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function raw($expression = null)
-  {
-      // Execute the closure on the mongodb collection
-      if ($expression instanceof Closure) {
-          return call_user_func($expression, $this->collection);
-      } // Create an expression for the given value
-      elseif (!is_null($expression)) {
-          return new Expression($expression);
-      }
+        // Quick access to the mongodb collection
+        return $this->collection;
+    }
 
-      // Quick access to the mongodb collection
-      return $this->collection;
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    {
+        $type = 'between';
 
-  /**
-   * {@inheritdoc}
-   */
-  public function whereBetween($column, array $values, $boolean = 'and', $not = false)
-  {
-      $type = 'between';
+        $this->wheres[] = compact('column', 'type', 'boolean', 'values', 'not');
 
-      $this->wheres[] = compact('column', 'type', 'boolean', 'values', 'not');
+        return $this;
+    }
 
-      return $this;
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function orderBy($column, $direction = 'asc')
+    {
+        $direction = strtolower($direction);
 
-  /**
-   * {@inheritdoc}
-   */
-  public function orderBy($column, $direction = 'asc')
-  {
-      $direction = strtolower($direction);
+        if (in_array($direction, ['asc', 'desc'])) {
+            $this->orders[$column] = $direction;
+        }
 
-      if (in_array($direction, ['asc', 'desc'])) {
-          $this->orders[$column] = $direction;
-      }
+        return $this;
+    }
 
-      return $this;
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function exists()
+    {
+        return !is_null($this->first());
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function exists()
-  {
-      return !is_null($this->first());
-  }
+    /**
+     * Remove one or more fields.
+     *
+     * @param mixed $columns
+     *
+     * @return int
+     */
+    public function drop($columns)
+    {
+        if (!is_array($columns)) {
+            $columns = [$columns];
+        }
 
-  /**
-   * Remove one or more fields.
-   *
-   * @param mixed $columns
-   *
-   * @return int
-   */
-  public function drop($columns)
-  {
-      if (!is_array($columns)) {
-          $columns = [$columns];
-      }
+        $fields = [];
 
-      $fields = [];
+        foreach ($columns as $column) {
+            $fields[$column] = 1;
+        }
 
-      foreach ($columns as $column) {
-          $fields[$column] = 1;
-      }
+        return $this->performUpdate([], ['$unset'=>$fields]);
+    }
 
-      return $this->performUpdate([], ['$unset'=>$fields]);
-  }
+    /**
+     * Append one or more values to an array.
+     *
+     * @param mixed $column
+     * @param mixed $value
+     * @param bool  $unique
+     *
+     * @return int
+     */
+    public function push($column, $value = null, $unique = false)
+    {
+        // Use the addToSet operator in case we only want unique items.
+        $operator = $unique ? '$addToSet' : '$push';
 
-  /**
-   * Append one or more values to an array.
-   *
-   * @param mixed $column
-   * @param mixed $value
-   * @param bool  $unique
-   *
-   * @return int
-   */
-  public function push($column, $value = null, $unique = false)
-  {
-      // Use the addToSet operator in case we only want unique items.
-      $operator = $unique ? '$addToSet' : '$push';
+        // Check if we are pushing multiple values.
+        $batch = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
 
-      // Check if we are pushing multiple values.
-      $batch = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+        if (is_array($column)) {
+            $query = [$operator => $column];
+        } elseif ($batch) {
+            $query = [$operator => [$column => ['$each' => $value]]];
+        } else {
+            $query = [$operator => [$column => $value]];
+        }
 
-      if (is_array($column)) {
-          $query = [$operator => $column];
-      } elseif ($batch) {
-          $query = [$operator => [$column => ['$each' => $value]]];
-      } else {
-          $query = [$operator => [$column => $value]];
-      }
+        return $this->performUpdate([], $query);
+    }
 
-      return $this->performUpdate([], $query);
-  }
+    /**
+     * Remove one or more values from an array.
+     *
+     * @param mixed $column
+     * @param mixed $value
+     *
+     * @return int
+     */
+    public function pull($column, $value = null)
+    {
+        $operator = '$pullAll';
 
-  /**
-   * Remove one or more values from an array.
-   *
-   * @param mixed $column
-   * @param mixed $value
-   *
-   * @return int
-   */
-  public function pull($column, $value = null)
-  {
-      $operator = '$pullAll';
+        if (is_array($column)) {
+            $query = [$operator => $column];
+        } else {
+            $query = [$operator => [$column => $value]];
+        }
 
-      if (is_array($column)) {
-          $query = [$operator => $column];
-      } else {
-          $query = [$operator => [$column => $value]];
-      }
+        return $this->performUpdate([], $query);
+    }
 
-      return $this->performUpdate([], $query);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($column, $amount = 1, array $extra = [], array $options = [])
+    {
+        $query = ['$inc' => [$column => $amount]];
 
-  /**
-   * {@inheritdoc}
-   */
-  public function increment($column, $amount = 1, array $extra = [], array $options = [])
-  {
-      $query = ['$inc' => [$column => $amount]];
+        // Protect
+        $this->where(function ($query) use ($column) {
+            $query->where($column, 'exists', false);
 
-      // Protect
-      $this->where(function ($query) use ($column) {
-          $query->where($column, 'exists', false);
+            $query->orWhereNotNull($column);
+        });
 
-          $query->orWhereNotNull($column);
-      });
+        return $this->performUpdate($extra, $query);
+    }
 
-      return $this->performUpdate($extra, $query);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($column, $amount = 1, array $extra = [], array $options = [])
+    {
+        return $this->increment($column, -1 * $amount, $extra, $options);
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function decrement($column, $amount = 1, array $extra = [], array $options = [])
-  {
-      return $this->increment($column, -1 * $amount, $extra, $options);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function __call($method, $parameters)
+    {
+        // Unset method
+        if ($method == 'unset') {
+            return call_user_func_array([$this, 'drop'], $parameters);
+        }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function __call($method, $parameters)
-  {
-      // Unset method
-      if ($method == 'unset') {
-          return call_user_func_array([$this, 'drop'], $parameters);
-      }
-
-      return parent::__call($method, $parameters);
-  }
+        return parent::__call($method, $parameters);
+    }
 }

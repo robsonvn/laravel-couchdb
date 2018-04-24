@@ -100,15 +100,7 @@ class ConnectionTest extends TestCase
         $this->assertEquals('mongodb', $driver);
     }
 
-    public function testAuth()
-    {
-        Config::set('database.connections.mongodb.username', 'foo');
-        Config::set('database.connections.mongodb.password', 'bar');
-        Config::set('database.connections.mongodb.options.database', 'custom');
 
-        $connection = DB::connection('couchdb');
-        $this->assertEquals('mongodb://127.0.0.1/custom', (string) $connection->getMongoClient());
-    }
 
     public function testCustomHostAndPort()
     {

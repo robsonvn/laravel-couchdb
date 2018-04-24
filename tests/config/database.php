@@ -8,8 +8,10 @@ return [
             'name'       => 'couchdb',
             'type'       => 'socket',
             'driver'     => 'couchdb',
-            'host'       => '127.0.0.1',
+            'host'       => '10.0.0.66',
             'dbname'     => 'unittest',
+            'user'       => 'admin2',
+            'password'   => 'secret',
         ],
 
         'mysql' => [

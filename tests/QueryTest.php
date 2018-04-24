@@ -50,6 +50,9 @@ class QueryTest extends TestCase
     public function testAndWhere()
     {
         $users = User::where('age', 35)->where('title', 'admin')->get();
+        print_r($users);
+        exit;
+
         $this->assertEquals(2, count($users));
 
         $users = User::where('age', '>=', 35)->where('title', 'user')->get();

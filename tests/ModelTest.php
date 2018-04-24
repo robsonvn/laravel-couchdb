@@ -156,6 +156,42 @@ class ModelTest extends TestCase
         $this->assertEquals(20, $check->age);
     }
 
+    public function testMultipleUpdate()
+    {
+        User::insert([
+          [
+            'name' => 'John Doe',
+            'title' => 'admin',
+            'age' => 35
+          ],
+          [
+            'name' => 'Jane Doe',
+            'title' => 'admin',
+            'age' => 35
+          ],
+          [
+            'name' => 'John Doe Jr',
+            'title' => 'admin',
+            'age' => 10
+          ]
+        ]);
+        $test = User::where('age', '=', 10)->update(['title'=>'user']);
+
+        $this->assertEquals(1, User::where('title', 'user')->count());
+    }
+
+    public function testUpdateIndexed()
+    {
+        $user = new User;
+        $user->name = 'Jane Doe';
+        $user->title = 'admin';
+        $user->age = 35;
+        $user->save();
+
+        $user->age = 23;
+        $user->save();
+    }
+
     public function testSelect()
     {
         $user = new User();
@@ -171,7 +207,7 @@ class ModelTest extends TestCase
         $user->save();
 
       //Simple select
-      $result = User::where('_id', $user->id)->first();
+        $result = User::where('_id', $user->id)->first();
         $this->assertInstanceOf(User::class, $result);
 
         $result = User::where('name', 'John Doe')->first();
@@ -181,7 +217,7 @@ class ModelTest extends TestCase
         $this->assertEquals(2, $result->count());
 
       //Nested where
-      $result = User::where([['title', '=', 'admin']])->get();
+        $result = User::where([['title', '=', 'admin']])->get();
         $this->assertEquals(2, $result->count());
 
         $result = User::where([['title', '=', 'admin'], ['name', '=', 'John Doe']])->get();
@@ -342,13 +378,14 @@ class ModelTest extends TestCase
         $this->assertEquals(1, $sharp->count());
     }
 
-    public function testGetMangoQuery(){
-      $query = User::where('age', '>', 37);
-      $query->first();
-      $mangoQuery = $query->getMangoQuery();
-
-      $this->assertEquals(['age'=>['$gt'=>37,'$lt'=>'a']], $mangoQuery->selector());
-      $this->assertEquals(1, $mangoQuery->limit());
+    public function testGetMangoQuery()
+    {
+        $mangoQuery = User::where('age', '>', 37)->orderBy('age')->getMangoQuery();
+      //  print_r($mangoQuery);
+      //  exit;
+      //  ['$and'=>[]]
+        $this->assertEquals(['age'=>['$gt'=>37,'$lt'=>'a'], 'type'=> 'users'], $mangoQuery->selector());
+        $this->assertEquals(1, $mangoQuery->limit());
     }
 
     public function testToArray()

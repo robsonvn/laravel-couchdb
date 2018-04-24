@@ -81,11 +81,14 @@ abstract class Model extends BaseModel
      */
     protected function setKeysForSaveQuery(BaseBuilder $query)
     {
+
         $query->where($this->getKeyName(), '=', $this->getKeyForSaveQuery());
 
         if ($this->getRevision()) {
             $query->where($this->getRevisionAttributeName(), '=', $this->getRevision());
         }
+
+        $query->orderBy('_id')->orderBy('_rev');
 
         return $query;
     }

@@ -22,8 +22,9 @@ class AuthTest extends TestCase
         $this->assertTrue(Auth::attempt(['email' => 'john@doe.com', 'password' => 'foobar'], true));
         $this->assertTrue(Auth::check());
     }
-      protected function getMocks()
-     {
+
+    protected function getMocks()
+    {
          $mocks = [
              'tokens' => Mockery::mock('Illuminate\Auth\Passwords\TokenRepositoryInterface'),
              'users'  => Mockery::mock('Illuminate\Contracts\Auth\UserProvider'),
@@ -31,7 +32,8 @@ class AuthTest extends TestCase
              'view'   => 'resetLinkView',
          ];
          return $mocks;
-     }
+    }
+       
     public function testRemind()
     {
         $this->markTestSkipped('Not finished');

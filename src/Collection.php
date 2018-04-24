@@ -15,27 +15,26 @@ class Collection
    * @param Connection $connection
    * @param string     $collection
    */
-  public function __construct(Connection $connection, $collection)
-  {
-      $this->connection = $connection;
-      $this->collection = $collection;
-  }
+    public function __construct(Connection $connection, $collection)
+    {
+        $this->connection = $connection;
+        $this->collection = $collection;
+    }
 
     public function __call($method, $parameters)
     {
         $parameters[0]['type'] = $this->collection;
-
         $result = call_user_func_array([$this->connection->getCouchDBClient(), $method], $parameters);
 
         return $result;
     }
 
-    public function find(MangoQuery $query, $options = null){
-      $selector = $query->selector();
-      $selector['type'] = $this->collection;
-      $query->selector($selector);
-      $client = $this->connection->getCouchDBClient();
-      return $client->find($query,$options);
+    public function find(MangoQuery $query, $options = null)
+    {
+        $selector = $query->selector();
+        $query->selector($selector);
+        $client = $this->connection->getCouchDBClient();
+        return $client->find($query, $options);
     }
 
     public function getName()
@@ -43,30 +42,22 @@ class Collection
         return $this->collection;
     }
 
-    public function deleteMany($where)
+    public function deleteMany($documents)
     {
         $deleted = 0;
-        $client = $this->connection->getCouchDBClient();
-        $where['type'] = $this->collection;
 
-        //TODO: change this limit after create cursor
-        $query = new MangoQuery($where);
-        $result = $client->find($query->limit(9999999999));
+        $bulkUpdater = $client->createBulkUpdater();
 
-        if ($result->status == 200) {
-            $bulkUpdater = $client->createBulkUpdater();
-
-            foreach ($result->body['docs'] as $doc) {
-                $doc['_deleted'] = true;
-                $bulkUpdater->updateDocument($doc,$doc['_id']);
-            }
-            $result = $bulkUpdater->execute();
-
-            if ($result->status == 201) {
-                $deleted = count($result->body);
-            }
+        foreach ($documents as $doc) {
+            $doc['_deleted'] = true;
+            $bulkUpdater->updateDocument($doc, $doc['_id']);
         }
+        $result = $bulkUpdater->execute();
 
+        if ($result->status == 201) {
+            $deleted = count($result->body);
+        }
+        
         return $deleted;
     }
 
@@ -110,36 +101,28 @@ class Collection
         }
     }
 
-    public function updateMany($selector, $values, array $options = [])
+    public function updateMany(array $documents, $values, array $options = [])
     {
-        $query = new MangoQuery($selector);
-        //TODO: change this limit after create cursor
-        $result = $this->find($query->limit(999999999));
+        foreach ($documents as &$document) {
+            //update new values
+            $document = array_merge($document, $values);
 
-        if ($result->status == 200) {
-            $documents = $result->body['docs'];
+            $document = $this->applyUpdateOptions($document, $options);
+        }
 
-            foreach ($documents as &$document) {
-                //update new values
-                $document = array_merge($document, $values);
+        $client = $this->connection->getCouchDBClient();
+        $bulkUpdater = $client->createBulkUpdater();
+        $bulkUpdater->updateDocuments($documents);
+        $response = $bulkUpdater->execute();
 
-                $document = $this->applyUpdateOptions($document, $options);
-            }
-
-            $client = $this->connection->getCouchDBClient();
-            $bulkUpdater = $client->createBulkUpdater();
-            $bulkUpdater->updateDocuments($documents);
-            $response = $bulkUpdater->execute();
-
-            if ($response->status == 201) {
-                return $response->body;
-            }
+        if ($response->status == 201) {
+            return $response->body;
         }
     }
 
     protected function applyUpdateOptions($document, $options)
     {
-        foreach ($options as $option=> $value) {
+        foreach ($options as $option => $value) {
             $option = ucfirst(str_replace('$', '', $option));
             $method = 'applyUpdateOption'.$option;
             if (method_exists($this, $method)) {
@@ -155,7 +138,7 @@ class Collection
         $data = new \Adbar\Dot();
         $data->setReference($document);
 
-        foreach ($options as $key=>$value) {
+        foreach ($options as $key => $value) {
             $current_value = ($data->get($key)) ?: 0;
             $data->set($key, $current_value + $value);
         }
@@ -175,28 +158,28 @@ class Collection
 
     protected function applyUpdateOptionPush($document, $options, $unique = false)
     {
-        foreach ($options as $key=> $value) {
+        foreach ($options as $key => $value) {
             if (is_array($value) && array_key_exists('$each', $value)) {
                 $value = $value['$each'];
             } else {
                 $value = [$value];
             }
 
-        //If there's no value yet
-        if (!array_key_exists($key, $document)) {
-            $value = (array) $value;
-          //apply unique treatment
-          if ($unique) {
-              $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
-              $value = array_unique($value);
-            //if is a sequencial array, reset array index
-            if ($is_sequencial) {
-                $value = array_values($value);
+            //If there's no value yet
+            if (!array_key_exists($key, $document)) {
+                $value = (array) $value;
+                //apply unique treatment
+                if ($unique) {
+                    $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+                    $value = array_unique($value);
+                    //if is a sequencial array, reset array index
+                    if ($is_sequencial) {
+                        $value = array_values($value);
+                    }
+                }
+                $document[$key] = $value;
+                continue;
             }
-          }
-            $document[$key] = $value;
-            continue;
-        }
 
             foreach ($value as $v) {
                 if (!$unique || !$this->checkIfExists($v, $document[$key])) {
@@ -224,12 +207,12 @@ class Collection
     protected function applyUpdateOptionPullAll($document, $options)
     {
         //cast array values into a sequencial array
-      array_walk($options, function (&$value) {
-          $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
-          if (!$is_sequencial) {
-              $value = [$value];
-          }
-      });
+        array_walk($options, function (&$value) {
+            $is_sequencial = (is_array($value) and array_keys($value) === range(0, count($value) - 1));
+            if (!$is_sequencial) {
+                $value = [$value];
+            }
+        });
 
         return Arr::array_diff_recursive($document, $options);
     }
@@ -239,5 +222,10 @@ class Collection
         $response = $this->connection->getCouchDBClient()->createMangoIndex($fields, 'mango-indexes', $index_name);
 
         return in_array($response->status, [200, 201]);
+    }
+
+    public function __toString()
+    {
+        return $this->collection;
     }
 }
