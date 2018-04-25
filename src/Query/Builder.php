@@ -170,11 +170,12 @@ class Builder extends BaseBuilder
 
     protected function performUpdate($values, array $options = [])
     {
+        //Retrive raw documents
         $useCollection = $this->useCollections;
         $this->useCollections = false;
-        //Retrive raw documents
         $rawDocuments = $this->get();
         $this->useCollections = $useCollection;
+
         return $this->collection->updateMany($rawDocuments, $values, $options);
     }
 
@@ -203,7 +204,7 @@ class Builder extends BaseBuilder
      */
     public function truncate()
     {
-        return $this->collection->deleteMany($this->compileWheres());
+        return $this->delete();
     }
 
     public function getSort()
@@ -403,16 +404,13 @@ class Builder extends BaseBuilder
      */
     protected function compileWheres()
     {
-        // The wheres to compile.
+        //The wheres to compile.
         $this->where('type', '=', (string) $this->collection);
         $wheres = is_array($this->wheres) ? $this->wheres : [];
 
         // We will add all compiled wheres to this array.
 
         $compiled = [];
-
-
-        //$compiled['$and'][] = [ 'type'=> (string) $this->collection ];
 
         foreach ($wheres as $i => &$where) {
             if (isset($where['operator']) && in_array($where['operator'], ['>', '>=', '<', '<='])) {
@@ -479,7 +477,6 @@ class Builder extends BaseBuilder
             $compiled = array_merge_recursive($compiled, $result);
         }
 
-        //
         return $compiled;
     }
 
@@ -639,17 +636,17 @@ class Builder extends BaseBuilder
                       ],
                   ],
               ],
-            $column => [
-              '$type'=> $this->getDatabaseEquivalentDataType($values[0]),
-            ],
-          ];
+              $column => [
+                '$type'=> $this->getDatabaseEquivalentDataType($values[0]),
+              ],
+            ];
         } else {
             return [
               $column => [
                   '$gte' => $values[0],
                   '$lte' => $values[1],
               ],
-          ];
+            ];
         }
     }
 

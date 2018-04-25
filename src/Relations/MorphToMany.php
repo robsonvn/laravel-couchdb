@@ -29,27 +29,29 @@ class MorphToMany extends EloquentMorphToMany
     }
 
 
-  public function get($columns = ['*']){
+    public function get($columns = ['*'])
+    {
 
-      //Retrive pivot entries
-      $pivot = \DB::collection($this->table)->where([
-        [$this->morphType,'=',$this->morphClass],
-        [$this->foreignKey,'=',$this->parent->id]
-      ])->get();
+        //Retrive pivot entries
+        $pivot = \DB::collection($this->table)->where([
+          [$this->morphType,'=',$this->morphClass],
+          [$this->foreignKey,'=',$this->parent->id]
+        ])->get();
 
-      $builder = $this->fresh_query->applyScopes();
-      $builder->whereIn('_id',$pivot->pluck($this->relatedKey)->toArray());
-      $models = $builder->getModels();
+        $builder = $this->fresh_query->applyScopes();
+        $builder->whereIn('_id', $pivot->pluck($this->relatedKey)->toArray());
 
-      $this->hydratePivotRelation($models);
+        $models = $builder->getModels();
 
-      // If we actually found models we will also eager load any relationships that
-      // have been specified as needing to be eager loaded. This will solve the
-      // n + 1 query problem for the developer and also increase performance.
-      if (count($models) > 0) {
-          $models = $builder->eagerLoadRelations($models);
-      }
+        $this->hydratePivotRelation($models);
 
-      return $this->related->newCollection($models);
-  }
+        // If we actually found models we will also eager load any relationships that
+        // have been specified as needing to be eager loaded. This will solve the
+        // n + 1 query problem for the developer and also increase performance.
+        if (count($models) > 0) {
+            $models = $builder->eagerLoadRelations($models);
+        }
+
+        return $this->related->newCollection($models);
+    }
 }

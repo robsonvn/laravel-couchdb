@@ -16,6 +16,8 @@ class MorphTo extends EloquentMorphTo
             // or has many relationships, we need to actually query on the primary key
             // of the related models matching on the foreign key that's on a parent.
             $this->query->where($this->getOwnerKey(), '=', $this->parent->{$this->foreignKey});
+            //Force use of index
+            $this->query->orderBy($this->getOwnerKey());
         }
     }
 

@@ -100,14 +100,14 @@ abstract class Model extends BaseModel
    *
    * @return mixed
    */
-  public function getIdAttribute($value = null)
-  {
-      if (!$value and array_key_exists('_id', $this->attributes)) {
-          $value = $this->attributes['_id'];
-      }
+    public function getIdAttribute($value = null)
+    {
+        if (!$value and array_key_exists('_id', $this->attributes)) {
+            $value = $this->attributes['_id'];
+        }
 
-      return $value;
-  }
+        return $value;
+    }
 
     public function setIdAttribute($value = null)
     {
@@ -556,6 +556,22 @@ public function attributesToArray()
     public function getForeignKey()
     {
         return Str::snake(class_basename($this)).'_'.ltrim($this->primaryKey, '_');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fresh($with = [])
+    {
+        if (! $this->exists) {
+             return;
+        }
+
+         return static::newQueryWithoutScopes()
+                         ->with(is_string($with) ? func_get_args() : $with)
+                         ->where($this->getKeyName(), $this->getKey())
+                         ->orderBy($this->getKeyName())
+                         ->first();
     }
 
     /**

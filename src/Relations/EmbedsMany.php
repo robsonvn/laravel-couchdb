@@ -39,19 +39,19 @@ class EmbedsMany extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-       if ($model->getKeyName() == '_id' and !$model->getKey()) {
-           $model->setAttribute('_id', uniqid());
-       }
+        if ($model->getKeyName() == '_id' and !$model->getKey()) {
+            $model->setAttribute('_id', uniqid());
+        }
 
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
-
             return $this->parent->save() ? $model : false;
         }
 
         // Push the new model to the database.
         $result = $this->getBaseQuery()->push($this->localKey, $model->getAttributes(), true);
+
         $result = current($result);
 
         // Attach the model to its parent.
@@ -65,7 +65,7 @@ class EmbedsMany extends EmbedsOneOrMany
         $this->parent->unguard();
         $this->parent->fill($this->parent->fresh()->getAttributes());
 
-        if(!$isUnguarded){
+        if (!$isUnguarded) {
             $this->parent->reguard();
         }
 
@@ -119,7 +119,7 @@ class EmbedsMany extends EmbedsOneOrMany
         $this->parent->unguard();
         $this->parent->fill($this->parent->fresh()->getAttributes());
 
-        if(!$isUnguarded){
+        if (!$isUnguarded) {
             $this->parent->reguard();
         }
         $this->parent->syncOriginal();

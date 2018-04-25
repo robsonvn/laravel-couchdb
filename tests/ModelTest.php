@@ -381,11 +381,17 @@ class ModelTest extends TestCase
     public function testGetMangoQuery()
     {
         $mangoQuery = User::where('age', '>', 37)->orderBy('age')->getMangoQuery();
-      //  print_r($mangoQuery);
-      //  exit;
-      //  ['$and'=>[]]
-        $this->assertEquals(['age'=>['$gt'=>37,'$lt'=>'a'], 'type'=> 'users'], $mangoQuery->selector());
-        $this->assertEquals(1, $mangoQuery->limit());
+        $expected =
+        [
+          '$and' => [
+              ['age'=> ['$gt'=>37,'$lt'=>'a']],
+              ['type'=> 'users']
+          ]
+        ];
+        $this->assertEquals($expected, $mangoQuery->selector());
+        $this->assertEquals(PHP_INT_MAX, $mangoQuery->limit());
+        $this->assertEquals([['type'=>'asc'],['age'=>'asc']], $mangoQuery->sort());
+        $this->assertEquals(['_design/mango-indexes','type:asc&age:asc'], $mangoQuery->use_index());
     }
 
     public function testToArray()

@@ -14,9 +14,9 @@ class Builder extends EloquentBuilder
   /**
    * {@inheritdoc}
    */
-  public function update(array $values, array $options = [])
-  {
-      // Intercept operations on embedded models and delegate logic
+    public function update(array $values, array $options = [])
+    {
+        // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if ($relation = $this->model->getParentRelation()) {
             $relation->performUpdate($this->model, $values);
@@ -24,75 +24,75 @@ class Builder extends EloquentBuilder
             return 1;
         }
 
-      return $this->query->update($this->addUpdatedAtColumn($values), $options);
-  }
+        return $this->query->update($this->addUpdatedAtColumn($values), $options);
+    }
+
+    /**
+    * {@inheritdoc}
+    */
+    public function insert(array $values)
+    {
+        // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $relation->performInsert($this->model, $values);
+
+            return true;
+        }
+
+        return parent::insert($values);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function insertGetId(array $values, $sequence = null)
+    {
+        // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $relation->performInsert($this->model, $values);
+
+            return [$this->model->getKey(), null];
+        }
+
+        return parent::insertGetId($values, $sequence);
+    }
 
   /**
    * {@inheritdoc}
    */
-  public function insert(array $values)
-  {
-      // Intercept operations on embedded models and delegate logic
-      // to the parent relation instance.
-      if ($relation = $this->model->getParentRelation()) {
-          $relation->performInsert($this->model, $values);
+    public function delete()
+    {
+        // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $relation->performDelete($this->model);
 
-          return true;
-      }
+            return $this->model->getKey();
+        }
 
-      return parent::insert($values);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function insertGetId(array $values, $sequence = null)
-  {
-      // Intercept operations on embedded models and delegate logic
-      // to the parent relation instance.
-      if ($relation = $this->model->getParentRelation()) {
-          $relation->performInsert($this->model, $values);
-
-          return [$this->model->getKey(), null];
-      }
-
-      return parent::insertGetId($values, $sequence);
-  }
+        return parent::delete();
+    }
 
   /**
    * {@inheritdoc}
    */
-  public function delete()
-  {
-      // Intercept operations on embedded models and delegate logic
-      // to the parent relation instance.
-      if ($relation = $this->model->getParentRelation()) {
-          $relation->performDelete($this->model);
+    public function raw($expression = null)
+    {
+        // Get raw results from the query builder.
+        $results = $this->query->raw($expression);
 
-          return $this->model->getKey();
-      }
+        if (is_array($results) and array_key_exists('_id', $results)) {
+            return $this->model->newFromBuilder((array) $results);
+        }
 
-      return parent::delete();
-  }
+        if ($results instanceof \Doctrine\CouchDB\HTTP\Response) {
+            return $this->model->hydrate($results->body['docs']);
+        }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function raw($expression = null)
-  {
-      // Get raw results from the query builder.
-    $results = $this->query->raw($expression);
-
-      if (is_array($results) and array_key_exists('_id', $results)) {
-          return $this->model->newFromBuilder((array) $results);
-      }
-
-      if ($results instanceof \Doctrine\CouchDB\HTTP\Response) {
-          return $this->model->hydrate($results->body['docs']);
-      }
-
-      return $results;
-  }
+        return $results;
+    }
 
     /**
      * {@inheritdoc}
@@ -119,28 +119,28 @@ class Builder extends EloquentBuilder
         return parent::increment($column, $amount, $extra);
     }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function decrement($column, $amount = 1, array $extra = [])
-  {
-      // Intercept operations on embedded models and delegate logic
-      // to the parent relation instance.
-      if ($relation = $this->model->getParentRelation()) {
-          $value = $this->model->{$column};
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($column, $amount = 1, array $extra = [])
+    {
+        // Intercept operations on embedded models and delegate logic
+        // to the parent relation instance.
+        if ($relation = $this->model->getParentRelation()) {
+            $value = $this->model->{$column};
 
-          // When doing increment and decrements, Eloquent will automatically
-          // sync the original attributes. We need to change the attribute
-          // temporary in order to trigger an update query.
-          $this->model->{$column} = null;
+            // When doing increment and decrements, Eloquent will automatically
+            // sync the original attributes. We need to change the attribute
+            // temporary in order to trigger an update query.
+            $this->model->{$column} = null;
 
-          $this->model->syncOriginalAttribute($column);
+            $this->model->syncOriginalAttribute($column);
 
-          return $this->model->update([$column => $value]);
-      }
+            return $this->model->update([$column => $value]);
+        }
 
-      return parent::decrement($column, $amount, $extra);
-  }
+        return parent::decrement($column, $amount, $extra);
+    }
 
     public function push($column, $values, $unique = false)
     {
@@ -152,55 +152,56 @@ class Builder extends EloquentBuilder
         return $this->query->pull($column, $values);
     }
 
-    public function getMangoQuery(){
-      return $this->query->getMangoQuery();
+    public function getMangoQuery()
+    {
+        return $this->query->getMangoQuery();
     }
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function addHasWhere(EloquentBuilder $hasQuery, Relation $relation, $operator, $count, $boolean)
-  {
-      $query = $hasQuery->getQuery();
+    /**
+     * {@inheritdoc}
+     */
+    protected function addHasWhere(EloquentBuilder $hasQuery, Relation $relation, $operator, $count, $boolean)
+    {
+        $query = $hasQuery->getQuery();
 
-      // Get the number of related objects for each possible parent.
-      $relations = $query->pluck($relation->getHasCompareKey());
-      $relationCount = array_count_values(array_map(function ($id) {
-          return (string) $id; // Convert Back ObjectIds to Strings
-      }, is_array($relations) ? $relations : $relations->flatten()->toArray()));
+        // Get the number of related objects for each possible parent.
+        $relations = $query->pluck($relation->getHasCompareKey());
+        $relationCount = array_count_values(array_map(function ($id) {
+            return (string) $id; // Convert Back ObjectIds to Strings
+        }, is_array($relations) ? $relations : $relations->flatten()->toArray()));
 
-      // Remove unwanted related objects based on the operator and count.
-      $relationCount = array_filter($relationCount, function ($counted) use ($count, $operator) {
-          // If we are comparing to 0, we always need all results.
-          if ($count == 0) {
-              return true;
-          }
+        // Remove unwanted related objects based on the operator and count.
+        $relationCount = array_filter($relationCount, function ($counted) use ($count, $operator) {
+            // If we are comparing to 0, we always need all results.
+            if ($count == 0) {
+                return true;
+            }
 
-          switch ($operator) {
-              case '>=':
-              case '<':
-                  return $counted >= $count;
-              case '>':
-              case '<=':
-                  return $counted > $count;
-              case '=':
-              case '!=':
-                  return $counted == $count;
-          }
-      });
+            switch ($operator) {
+                case '>=':
+                case '<':
+                    return $counted >= $count;
+                case '>':
+                case '<=':
+                    return $counted > $count;
+                case '=':
+                case '!=':
+                    return $counted == $count;
+            }
+        });
 
-      // If the operator is <, <= or !=, we will use whereNotIn.
-      $not = in_array($operator, ['<', '<=', '!=']);
+        // If the operator is <, <= or !=, we will use whereNotIn.
+        $not = in_array($operator, ['<', '<=', '!=']);
 
-      // If we are comparing to 0, we need an additional $not flip.
-      if ($count == 0) {
-          $not = !$not;
-      }
+        // If we are comparing to 0, we need an additional $not flip.
+        if ($count == 0) {
+            $not = !$not;
+        }
 
-      // All related ids.
-      $relatedIds = array_keys($relationCount);
+        // All related ids.
+        $relatedIds = array_keys($relationCount);
 
-      // Add whereIn to the query.
-      return $this->whereIn($this->model->getKeyName(), $relatedIds, $boolean, $not);
-  }
+        // Add whereIn to the query.
+        return $this->whereIn($this->model->getKeyName(), $relatedIds, $boolean, $not);
+    }
 }

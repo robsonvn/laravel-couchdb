@@ -45,19 +45,20 @@ class Collection
     public function deleteMany($documents)
     {
         $deleted = 0;
-
+        $client = $this->connection->getCouchDBClient();
         $bulkUpdater = $client->createBulkUpdater();
 
         foreach ($documents as $doc) {
             $doc['_deleted'] = true;
             $bulkUpdater->updateDocument($doc, $doc['_id']);
         }
+        
         $result = $bulkUpdater->execute();
 
         if ($result->status == 201) {
             $deleted = count($result->body);
         }
-        
+
         return $deleted;
     }
 

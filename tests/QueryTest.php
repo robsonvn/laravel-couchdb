@@ -14,7 +14,7 @@ class QueryTest extends TestCase
         User::create(['name' => 'Mark Moe', 'age' => 23, 'title' => 'user']);
         User::create(['name' => 'Brett Boe', 'age' => 35, 'title' => 'user']);
         User::create(['name' => 'Tommy Toe', 'age' => 33, 'title' => 'user']);
-        User::create(['name' => 'Yvonne Yoe', 'age' => 35, 'title' => 'admin']);
+        User::create(['name' => 'Yvonne Yoe', 'age' => 35, 'title' => 'admin', 'privilleged' => true]);
         User::create(['name' => 'Error', 'age' => null, 'title' => null]);
     }
 
@@ -50,8 +50,6 @@ class QueryTest extends TestCase
     public function testAndWhere()
     {
         $users = User::where('age', 35)->where('title', 'admin')->get();
-        print_r($users);
-        exit;
 
         $this->assertEquals(2, count($users));
 
