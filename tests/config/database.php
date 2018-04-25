@@ -10,8 +10,6 @@ return [
             'driver'     => 'couchdb',
             'host'       => 'localhost',
             'dbname'     => 'unittest',
-            'user'       => 'admin',
-            'password'   => 'secret',
         ],
 
         'mysql' => [

@@ -1,23 +1,21 @@
 language: php
 dist: trusty
 sudo: required
-
+services:
+  - docker
 php:
   - 5.6
   - 7.0
   - 7.1
 
 before_script:
-  - mkdir temp
-  - cd temp
-  - git clone https://gist.github.com/9a8e74487573f25bd83b59aac328bf6d.git .
-  - sudo sh install-couchdb-2.0.0-travis-ci.sh
-  - sleep 10
+  - docker pull robsonvn/couchdb-ssl
+  - docker run -p 5984:5984 -p 6984:6984 robsonvn/couchdb-ssl
+  - sleep 5
   - curl -X PUT localhost:5984/unittest
-  - cd ..
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
-
+  
 script: vendor/bin/phpunit --coverage-clover=coverage.xml
 
 after_success:
