@@ -11,8 +11,6 @@ Laravel CouchDB is an Eloquent model and Query builder with support for **CouchD
 
 ## Good to know before using it
 
-* This library is under development, so use on your own.
-* CouchDB **IS NOT** Mongo DB, does not work as Mongo DB and does not have the same resources as Mongo DB, so **DO NOT** expect to do everthing that [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb) library does in the same way it does.
 * CouchDB has many limitations dealing with Mango Query that force us to process somethings in memory, which directly impacts on our library performance, please check out the [Couch Limitations](#couchdb-limitations) and the [Limitations](#limitations) sections for more details.
 
 Table of contents
@@ -62,7 +60,7 @@ And add the service provider in `config/app.php`:
 Robsonvn\CouchDB\ServiceProvider::class,
 ```
 ### Laravel version Compatibility
-For now, this project only works with Laravel 5.4.x 
+For now, this project only works with Laravel 5.4.x
 
 
 Configuration
@@ -92,12 +90,17 @@ And add a new couchdb connection:
 
 And this on yours .env file
 
+```
 DB_CONNECTION=couchdb
-DB_HOST=127.0.0.1
+DB_HOST=dbhost
 DB_PORT=5984
 DB_DATABASE=dbname
 DB_USERNAME=
 DB_PASSWORD=
+```
+***Please note, the database user must be an admin since this library create indexes on the fly (design_docs)***
+
+You can read more about CouchDB Authorization [here](http://docs.couchdb.org/en/2.1.1/intro/security.html#authorization).
 
 Eloquent
 --------
@@ -362,7 +365,7 @@ User::where('name', 'not regex', '(?i).*doe$')->get()
 
 **Type**
 
-Selects documents if a field is of the specified type. 
+Selects documents if a field is of the specified type.
 Valid values are "null", "boolean", "number", "string", "array", and "object".
 
 ```php
@@ -685,11 +688,10 @@ TODO
 * Create a query cursor.
 * Add support to get casted attribute using doting notation.
 
-## Special Thanks 
+## Special Thanks
 
-[Automated Solutions Limited](http://www.automated.co.nz) for supporting this project.
+[Fred Booking](https://www.fredbooking.com) for supporting this project.
 
 [Jens Segers](https://github.com/jenssegers) and the [Laravel MongoDB contributors](https://github.com/jenssegers/laravel-mongodb/graphs/contributors) because many of the code and structure of this project came from there.
 
 ~~[Doctrine](http://www.doctrine-project.org/) for abandoning the [CouchDB Client library](https://github.com/doctrine/couchdb-client)~~
-

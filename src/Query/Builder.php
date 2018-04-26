@@ -337,7 +337,7 @@ class Builder extends BaseBuilder
             $query->skip($this->offset);
         }
 
-        $query->limit($this->limit ?? PHP_INT_MAX);
+        $query->limit($this->limit ? $this->limit : PHP_INT_MAX);
 
         $query->sort($this->getSort())->use_index($this->getIndex());
 
@@ -607,11 +607,11 @@ class Builder extends BaseBuilder
         }
 
         return [
-        $column => [
-             $this->conversion[$operator] => $value,
-             $aux_operator => $aux_value,
-        ],
-    ];
+          $column => [
+               $this->conversion[$operator] => $value,
+               $aux_operator => $aux_value,
+          ],
+        ];
     }
     /**
      * @param array $where
