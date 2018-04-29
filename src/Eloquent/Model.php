@@ -189,10 +189,8 @@ abstract class Model extends BaseModel
       if ($this->isDirty()) {
           $response = $this->setKeysForSaveQuery($query)->update($attributes);
 
-          if (count($response)) {
-              $id = $response[0]['id'];
-              $rev = $response[0]['rev'];
-              $this->setAttribute($this->getRevisionAttributeName(), $rev);
+          if (is_array($response) && array_key_exists(0, $response) && array_key_exists('rev', $response[0])) {
+              $this->setAttribute($this->getRevisionAttributeName(), $response[0]['rev']);
           }
 
           $this->fireModelEvent('updated', false);
@@ -314,7 +312,7 @@ protected function getAttributeFromArray($key)
 
             foreach ($value as $subkey=> &$item) {
                 //create a dot notation for the key, ignore subkey if is a sequencial array
-        $tree = $key.(($is_sequencial) ? '' : '.'.$subkey);
+                $tree = $key.(($is_sequencial) ? '' : '.'.$subkey);
 
                 $item = $this->applyCastArrayRecursive($tree, $item);
             }

@@ -288,10 +288,9 @@ abstract class EmbedsOneOrMany extends Relation
         }
 
         $model = $this->related->newFromBuilder((array) $attributes);
-
         $model->setParentRelation($this->parent, $this->relation);
-
         $model->setRelation($this->foreignKey, $this->parent);
+        $model->setConnection($this->parent->getConnectionName());
 
         // If you remove this, you will get segmentation faults!
         $model->setHidden(array_merge($model->getHidden(), [$this->foreignKey]));

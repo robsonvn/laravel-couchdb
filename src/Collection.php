@@ -4,6 +4,7 @@ namespace Robsonvn\CouchDB;
 
 use Doctrine\CouchDB\Mango\MangoQuery;
 use Robsonvn\CouchDB\Helpers\Arr;
+use Robsonvn\CouchDB\Exceptions\UniqueConstraintException;
 
 class Collection
 {
@@ -52,7 +53,7 @@ class Collection
             $doc['_deleted'] = true;
             $bulkUpdater->updateDocument($doc, $doc['_id']);
         }
-        
+
         $result = $bulkUpdater->execute();
 
         if ($result->status == 201) {
@@ -107,7 +108,6 @@ class Collection
         foreach ($documents as &$document) {
             //update new values
             $document = array_merge($document, $values);
-
             $document = $this->applyUpdateOptions($document, $options);
         }
 
@@ -183,7 +183,12 @@ class Collection
             }
 
             foreach ($value as $v) {
-                if (!$unique || !$this->checkIfExists($v, $document[$key])) {
+                if ($unique && $this->checkIfExists($v, $document[$key])) {
+                    //Throw a unique exception in case of is push a new document with an existing _id
+                    if (is_array($v) && array_key_exists('_id', $v)) {
+                        throw new UniqueConstraintException;
+                    }
+                } else {
                     array_push($document[$key], $v);
                 }
             }
