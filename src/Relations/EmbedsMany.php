@@ -86,13 +86,11 @@ class EmbedsMany extends EmbedsOneOrMany
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
-
             return $this->parent->save();
         }
 
         // Get the correct foreign key value.
         $foreignKey = $this->getForeignKeyValue($model);
-
         $entries = $this->parent->getOriginal($this->localKey);
 
         //update array with the new data
@@ -102,29 +100,11 @@ class EmbedsMany extends EmbedsOneOrMany
             }
         }
 
-        // Update document in database
-        $query = $this->getBaseQuery()->where($this->localKey, 'elemmatch', [$model->getKeyName()=>$foreignKey]);
-        $response = $query->update([$this->localKey=>$entries]);
-        $result = current($response);
+        $result = $this->parent->update([$this->localKey=>$entries]);
 
-        // Attach the model to its parent.
-        if ($result['ok']) {
-            $this->associate($model);
-        }
+        $this->parent->setRelation($this->localKey, $this->toCollection($entries));
 
-        //Reload parent values
-        //Where we need to get the data from the database because for now we don't have the successful response status
-        $isUnguarded = $this->parent->isUnguarded();
-
-        $this->parent->unguard();
-        $this->parent->fill($this->parent->fresh()->getAttributes());
-
-        if (!$isUnguarded) {
-            $this->parent->reguard();
-        }
-        $this->parent->syncOriginal();
-
-        return $result ? $model : false;
+        return  $result ? $model : false;
     }
 
     /**
@@ -290,6 +270,7 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         $records = $this->getEmbedded();
+        $model->setConnection($this->parent->getConnectionName());
 
         // Add the new model to the embedded documents.
         $records[] = $model->getAttributes();

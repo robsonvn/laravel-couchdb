@@ -47,12 +47,17 @@ class EmbeddedRelationsTest extends TestCase
 
         $user = User::find($user->_id);
         $this->assertEquals(['London', 'Paris'], $user->addresses->pluck('city')->all());
-
         $address->setEventDispatcher($events = Mockery::mock('Illuminate\Events\Dispatcher'));
+
         $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($address), $address)->andReturn(true);
         $events->shouldReceive('until')->once()->with('eloquent.updating: '.get_class($address), $address)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.saving: '.get_class($user), $user)->andReturn(true);
+        $events->shouldReceive('until')->once()->with('eloquent.updating: '.get_class($user), $user)->andReturn(true);
+
         $events->shouldReceive('fire')->once()->with('eloquent.updated: '.get_class($address), $address);
+        $events->shouldReceive('fire')->once()->with('eloquent.updated: '.get_class($user), $user);
         $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($address), $address);
+        $events->shouldReceive('fire')->once()->with('eloquent.saved: '.get_class($user), $user);
 
         $last_user_rev = $user->getRevision();
         $address->city = 'New York';
@@ -169,11 +174,11 @@ class EmbeddedRelationsTest extends TestCase
         $address->city = 'Paris';
         $user->addresses()->save($address);
         $this->assertEquals(1, $user->addresses->count());
+
         $this->assertEquals(['Paris'], $user->addresses->pluck('city')->all());
 
+        $this->expectException(Robsonvn\CouchDB\Exceptions\UniqueConstraintException::class);
         $user->addresses()->create(['_id' => $address->_id, 'city' => 'Bruxelles']);
-        $this->assertEquals(1, $user->addresses->count());
-        $this->assertEquals(['Bruxelles'], $user->addresses->pluck('city')->all());
     }
 
     public function testEmbedsManyCreate()
@@ -696,6 +701,7 @@ class EmbeddedRelationsTest extends TestCase
 
         $address->increment('visited');
         $this->assertEquals(6, $address->visited);
+
         $this->assertEquals(6, $user->addresses()->first()->visited);
 
         $user = User::where('name', 'John Doe')->first();

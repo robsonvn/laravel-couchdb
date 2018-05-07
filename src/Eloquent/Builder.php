@@ -20,8 +20,7 @@ class Builder extends EloquentBuilder
         // to the parent relation instance.
         if ($relation = $this->model->getParentRelation()) {
             $relation->performUpdate($this->model, $values);
-
-            return 1;
+            return true;
         }
 
         return $this->query->update($this->addUpdatedAtColumn($values), $options);
@@ -36,7 +35,6 @@ class Builder extends EloquentBuilder
         // to the parent relation instance.
         if ($relation = $this->model->getParentRelation()) {
             $relation->performInsert($this->model, $values);
-
             return true;
         }
 

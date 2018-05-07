@@ -1,13 +1,10 @@
 # Laravel CouchDB
 
 
-[![Build Status](http://img.shields.io/travis/robsonvn/laravel-couchdb.svg)](https://travis-ci.org/robsonvn/laravel-couchdb) [![StyleCI](https://styleci.io/repos/90929490/shield?style=flat)](https://styleci.io/repos/90929490)
+[![Build Status](http://img.shields.io/travis/robsonvn/laravel-couchdb.svg?branch=master)](https://travis-ci.org/robsonvn/laravel-couchdb) [![StyleCI](https://styleci.io/repos/90929490/shield?style=flat)](https://styleci.io/repos/90929490)
 [![codecov.io](https://codecov.io/gh/robsonvn/laravel-couchdb/coverage.svg?branch=master)](https://codecov.io/gh/robsonvn/laravel-couchdb)
 
-Inspired on [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb)
-
 Laravel CouchDB is an Eloquent model and Query builder with support for **CouchDB 2.x**, using the original Laravel API. This library extends the original Laravel classes, so it uses exactly the same methods.
-
 
 ## Good to know before using it
 
@@ -29,23 +26,6 @@ Table of contents
 * [TODO](#todo)
 
 ## Installation
-
-Since the Doctrine has abandoned the [CouchDB Client library](https://github.com/doctrine/couchdb-client), please use my fork of this project where I have added support to [find](http://docs.couchdb.org/en/2.0.0/api/database/find.html) endpoint and the CouchDB v2.0, until a better solution comes up.
-
-Add the following repository in your composer.json
-
-```
-...  
-  "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/robsonvn/couchdb-client"
-        }
-  ],
-  "require": {
-    "doctrine/couchdb": "dev-master",
-...
-```
 
 
 Installation using composer:
@@ -693,5 +673,3 @@ TODO
 [Fred Booking](https://www.fredbooking.com) for supporting this project.
 
 [Jens Segers](https://github.com/jenssegers) and the [Laravel MongoDB contributors](https://github.com/jenssegers/laravel-mongodb/graphs/contributors) because many of the code and structure of this project came from there.
-
-~~[Doctrine](http://www.doctrine-project.org/) for abandoning the [CouchDB Client library](https://github.com/doctrine/couchdb-client)~~
