@@ -9,6 +9,7 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Collection;
 use Robsonvn\CouchDB\Connection;
 use Doctrine\CouchDB\Mango\MangoQuery;
+use Robsonvn\CouchDB\Exceptions\QueryException;
 
 class Builder extends BaseBuilder
 {
@@ -222,7 +223,7 @@ class Builder extends BaseBuilder
         if (count($this->orders)) {
             $direction = array_unique(array_values($this->orders));
             if (count($direction) > 1) {
-                throw new \Exception('Sorts currently only support a single direction for all fields.');
+                throw new QueryException('Sort currently only support a single direction for all fields.');
             }
             list($direction) = $direction;
         }
@@ -291,7 +292,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Unfortunately, CouchDB require that the fields there are being ordained must be on selector clausure
+     * Unfortunately, CouchDB require that the fields there are being ordained must be on selector closure
      * For those who aren't being select, let's add a selector field >= null.
      */
     protected function addWhereGreaterThanNullForOrdersField()
@@ -302,7 +303,7 @@ class Builder extends BaseBuilder
                 //search if exist any filter for this field
                 if (is_array($this->wheres)) {
                     foreach ($this->wheres as $where) {
-                        if ($where['column'] == $field) {
+                        if (isset($where['column']) && $where['column'] == $field) {
                             $exists = true;
                             continue;
                         }
@@ -321,7 +322,7 @@ class Builder extends BaseBuilder
             $this->columns = $columns;
         }
 
-        // Drop all columns if * is present, CouchDB does not work this way.
+        // Drop all columns if * is present
         if (in_array('*', $this->columns)) {
             $this->columns = [];
         }
@@ -346,6 +347,72 @@ class Builder extends BaseBuilder
 
     public function get($columns = [], $create_index = true)
     {
+        if ($this->shouldUseFindEndpoint()) {
+            return $this->getFindEndpoint($columns, $create_index);
+        }
+        return $this->getFindDocuments($columns);
+    }
+
+    /**
+     * This method decides if should perform get query using _all_docs or _find endpoint
+     * Whenever querying only by _id, fetch using _all_docs to use natural CouchDB index
+     * to boost performance
+     */
+    public function shouldUseFindEndpoint()
+    {
+        if (count($this->wheres)) {
+            foreach ($this->wheres as $where) {
+                //if is filtering different of _id and _rev should use find endpoint
+                if (!in_array($where['type'], array('Basic', 'In')) ||
+                    !in_array($where['column'], array('_id', '_rev'))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    public function getFindDocuments($columns = [])
+    {
+        $columns = in_array('*', $columns) ? [] : $columns;
+
+        $documents = array();
+        foreach ($this->wheres as $where) {
+            if (isset($where['column']) && $where['column'] === '_id') {
+                $ids = isset($where['values']) ? $where['values'] : [$where['value']];
+                break;
+            }
+        }
+
+        $response = $this->collection->findDocuments($ids);
+
+        $docs = array();
+
+        if ($response->status != 200) {
+            throw new QueryException($response->body['reason']);
+        }
+
+        foreach ($response->body['rows'] as $row) {
+            if (isset($row['doc'])) {
+                $doc = $row['doc'];
+                //Filter columns
+                if (count($columns)) {
+                    //mandatory fields
+                    array_push($columns, '_id', '_rev', 'type');
+                    $doc = array_intersect_key($doc, array_flip($columns));
+                }
+                $docs[] = $doc;
+            }
+        }
+
+        $collections = $this->useCollections ? new Collection($docs) : $docs;
+
+        return $collections;
+    }
+
+    public function getFindEndpoint($columns = array(), $create_index = true)
+    {
         $results = $this->collection->find($this->getMangoQuery($columns));
 
         if ($results->status != 200) {
@@ -356,14 +423,13 @@ class Builder extends BaseBuilder
                 //Create request index and try again
                 if ($create_index) {
                     if ($this->createIndex()) {
-                        return $this->get($columns, false);
+                        return $this->getFindEndpoint($columns, false);
                     }
                 }
-                throw new \Exception('QueryException no-index or no matching fields order/selector');
+                throw new QueryException('no-index or no matching fields order/selector');
             }
 
-            //TODO improve this exception
-            throw new \Exception('QueryException '.$results->body['reason']);
+            throw new QueryException($results->body['reason']);
         }
 
         $results = $results->body['docs'];

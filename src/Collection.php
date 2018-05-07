@@ -30,6 +30,13 @@ class Collection
         return $result;
     }
 
+    public function findDocuments($ids, $limit = null, $offset = null)
+    {
+        $client = $this->connection->getCouchDBClient();
+
+        return $client->findDocuments($ids, $limit, $offset);
+    }
+
     public function find(MangoQuery $query, $options = null)
     {
         $selector = $query->selector();

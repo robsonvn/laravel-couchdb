@@ -8,18 +8,12 @@
     }
   ],
   "license" : "MIT",
-  "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/robsonvn/couchdb-client"
-        }
-  ],
   "require": {
     "illuminate/database": "5.4.*",
     "illuminate/support": "5.4.*",
     "illuminate/container": "5.4.*",
     "illuminate/events": "5.4.*",
-    "doctrine/couchdb": "dev-master",
+    "doctrine/couchdb": "^2.0.0-alpha1",
     "adbario/php-dot-notation": "^1.2"
   },
   "require-dev":{
