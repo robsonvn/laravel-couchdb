@@ -61,6 +61,11 @@ class User extends Authenticatable
         return $this->embedsOne('User');
     }
 
+    public function company()
+    {
+        return $this->belongsTo('Company');
+    }
+
     protected function getDateFormat()
     {
         return 'l jS \of F Y h:i:s A';

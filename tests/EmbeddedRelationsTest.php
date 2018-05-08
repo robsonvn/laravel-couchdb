@@ -12,6 +12,7 @@ class EmbeddedRelationsTest extends TestCase
         Client::truncate();
         Group::truncate();
         Photo::truncate();
+        Company::truncate();
     }
 
     public function testEmbedsManySave()
@@ -529,6 +530,30 @@ class EmbeddedRelationsTest extends TestCase
 
         $user->father()->delete();
         $this->assertNull($user->father);
+    }
+
+    public function testEmbedsOneEagerLoading(){
+        $company = Company::create(['name'=>'Doe does']);
+        $father = new User(['name' => 'Mark Doe']);
+        $father->company()->associate($company);
+
+        $user = User::create(['name' => 'John Doe']);
+        $user->company()->associate($company);
+        $father = $user->father()->save($father);
+        $user->save();
+
+        $this->assertInstanceOf(Company::class, $user->father->company);
+        $this->assertEquals('Doe does', $user->father->company->name);
+
+        $userFresh = User::with('father.company.users')->find($user->_id);
+        $userArray = json_decode(json_encode($userFresh), true);
+
+        $this->assertTrue(array_key_exists('father', $userArray));
+        $this->assertTrue(array_key_exists('company', $userArray['father']));
+        $this->assertEquals($company->_id, $userArray['father']['company']['_id']);
+        $this->assertTrue(array_key_exists('users', $userArray['father']['company']));
+        $this->assertEquals(1,count($userArray['father']['company']['users']));
+
     }
 
     public function testEmbedsManyToArray()

@@ -23,7 +23,15 @@ class EmbedsOne extends EmbedsOneOrMany
      */
     public function getResults()
     {
-        return $this->toModel($this->getEmbedded());
+        $embedded = $this->getEmbedded();
+        $model = $this->toModel($this->getEmbedded());
+
+        if ($model) {
+            $collection = $this->eagerLoadRelations([$model]);
+            $model = current($collection);
+        }
+
+        return $model;
     }
 
     /**
