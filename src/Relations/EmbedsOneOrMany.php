@@ -74,18 +74,20 @@ abstract class EmbedsOneOrMany extends Relation
      */
     public function addEagerConstraints(array $models)
     {
-        // There are no eager loading constraints.
+        // There is no eager loading constraint.
     }
 
     /**
      * {@inheritdoc}
      */
-    public function match(array $models, Collection $results, $relation)
+    public function match(array $models, Collection $results = null, $relation)
     {
         foreach ($models as $model) {
-            $results = $model->$relation()->getResults();
+            $eagerLoad = $this->query->getEagerLoads();
+            $relationObject = $model->$relation();
+            $relationObject->query->setEagerLoads($eagerLoad);
             $model->setParentRelation($this->parent, $this->relation);
-            $model->setRelation($relation, $results);
+            $model->setRelation($relation, $relationObject->getResults());
         }
 
         return $models;
@@ -297,16 +299,6 @@ abstract class EmbedsOneOrMany extends Relation
 
         return $model;
     }
-    /*
-    protected function getModel($values){
-      $models = $this->related->hydrate($values);
-      foreach($models as $model){
-        //$model->setParentRelation($this->parent,$this->relation);
-        $model->setRelation($this->foreignKey, $this->parent);
-      }
-      return $models;
-    }
-    */
 
     /**
      * Get the relation instance of the parent.
@@ -325,7 +317,8 @@ abstract class EmbedsOneOrMany extends Relation
     {
         // Because we are sharing this relation instance to models, we need
         // to make sure we use separate query instances.
-        return clone $this->query;
+        //$query = clone $this->query;
+        return $this->query;
     }
 
     /**
