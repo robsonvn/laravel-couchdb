@@ -36,9 +36,9 @@ trait EmbedsRelations
             $foreignKey = snake_case(class_basename($this));
         }
 
-        $query = $this->newQuery();
-
         $instance = new $related();
+        $query = $instance->newQuery();
+        //$query2 = $this->newQuery();
 
         return new EmbedsMany($query, $this, $instance, $localKey, $foreignKey, $relation);
     }

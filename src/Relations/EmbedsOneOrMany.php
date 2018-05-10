@@ -49,11 +49,6 @@ abstract class EmbedsOneOrMany extends Relation
         $this->foreignKey = $foreignKey;
         $this->relation = $relation;
 
-        // If this is a nested relation, we need to get the parent query instead.
-        if ($parentRelation = $this->getParentRelation()) {
-            $this->query = $parentRelation->getQuery();
-        }
-
         $this->addConstraints();
     }
 
@@ -82,16 +77,38 @@ abstract class EmbedsOneOrMany extends Relation
      */
     public function match(array $models, Collection $results = null, $relation)
     {
+        /**
+        * Basically $results will always be null since we're not querying them.
+        * We're going to considere $results per model retriving them from the
+        * very same model
+        */
         foreach ($models as $model) {
+            //store the eager load
             $eagerLoad = $this->query->getEagerLoads();
             $relationObject = $model->$relation();
+
+            //repass the eager load values to the relation query
             $relationObject->query->setEagerLoads($eagerLoad);
+
+            $results = $relationObject->getResults();
             $model->setParentRelation($this->parent, $this->relation);
-            $model->setRelation($relation, $relationObject->getResults());
+            $model->setRelation($relation, $results);
         }
 
         return $models;
     }
+
+    /**
+     * This method is used to query the eager values from the database
+     * and match them to all models.
+     * Since we already have the data embedded, we won't query nothing
+     *
+     * {@inheritdoc}
+     */
+    public function getEager(){
+        return null;
+    }
+
 
     /**
      * Shorthand to get the results of the relationship.
@@ -317,8 +334,7 @@ abstract class EmbedsOneOrMany extends Relation
     {
         // Because we are sharing this relation instance to models, we need
         // to make sure we use separate query instances.
-        //$query = clone $this->query;
-        return $this->query;
+        return $this->query;;
     }
 
     /**

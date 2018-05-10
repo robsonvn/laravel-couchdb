@@ -13,6 +13,7 @@ class EmbeddedRelationsTest extends TestCase
         Group::truncate();
         Photo::truncate();
         Company::truncate();
+        Country::truncate();
     }
 
     public function testEmbedsManySave()
@@ -380,21 +381,38 @@ class EmbeddedRelationsTest extends TestCase
 
     public function testEmbedsManyEagerLoading()
     {
+        $usa = Country::create(['name' => 'USA']);
+        $france = Country::create(['name' => 'France']);
+        $germany = Country::create(['name' => 'Germany']);
+
+        $newYork = new Address(['city' => 'New York']);
+        $newYork->country()->associate($usa);
+
+        $paris = new Address(['city' => 'Paris']);
+        $paris->country()->associate($france);
+
+        $berlin = new Address(['city' => 'Berlin']);
+        $paris->country()->associate($germany);
+
         $user1 = User::create(['name' => 'John Doe']);
-        $user1->addresses()->save(new Address(['city' => 'New York']));
-        $user1->addresses()->save(new Address(['city' => 'Paris']));
+        $user1->addresses()->save($newYork);
+        $user1->addresses()->save($paris);
 
         $user2 = User::create(['name' => 'Jane Doe']);
-        $user2->addresses()->save(new Address(['city' => 'Berlin']));
-        $user2->addresses()->save(new Address(['city' => 'Paris']));
+        $user2->addresses()->save($berlin);
 
-        $user = User::find($user1->id);
-        $relations = $user->getRelations();
-        $this->assertFalse(array_key_exists('addresses', $relations));
-        $this->assertArrayHasKey('addresses', $user->toArray());
-        $this->assertTrue(is_array($user->toArray()['addresses']));
+        $user1Fresh = User::with(['addresses.country'])->find($user1->id);
 
-        $user = User::with('addresses')->get()->first();
+        $user1Array = $user1Fresh->toArray();
+        $this->assertTrue(array_key_exists('addresses', $user1Array));
+        $this->assertEquals(2, count($user1Array['addresses']));
+
+        $this->assertTrue(array_key_exists('country', $user1Array['addresses'][0]));
+        $this->assertTrue(array_key_exists('country', $user1Array['addresses'][1]));
+        $relations = $user1Fresh->getRelations();
+        $this->assertFalse(array_key_exists('father', $relations));
+
+        $user = User::with(['father','addresses'])->get()->first();
         $relations = $user->getRelations();
         $this->assertTrue(array_key_exists('addresses', $relations));
         $this->assertEquals(2, $relations['addresses']->count());
@@ -429,21 +447,21 @@ class EmbeddedRelationsTest extends TestCase
     public function testEmbedsManyCollectionMethods()
     {
         $user = User::create(['name' => 'John Doe']);
-        $user->addresses()->save(new Address(['city' => 'Paris', 'country' => 'France', 'visited' => 4, 'created_at' => new DateTime('3 days ago')]));
-        $user->addresses()->save(new Address(['city' => 'Bruges', 'country' => 'Belgium', 'visited' => 7, 'created_at' => new DateTime('5 days ago')]));
-        $user->addresses()->save(new Address(['city' => 'Brussels', 'country' => 'Belgium', 'visited' => 2, 'created_at' => new DateTime('4 days ago')]));
-        $user->addresses()->save(new Address(['city' => 'Ghent', 'country' => 'Belgium', 'visited' => 13, 'created_at' => new DateTime('2 days ago')]));
+        $user->addresses()->save(new Address(['city' => 'Paris', 'country_name' => 'France', 'visited' => 4, 'created_at' => new DateTime('3 days ago')]));
+        $user->addresses()->save(new Address(['city' => 'Bruges', 'country_name' => 'Belgium', 'visited' => 7, 'created_at' => new DateTime('5 days ago')]));
+        $user->addresses()->save(new Address(['city' => 'Brussels', 'country_name' => 'Belgium', 'visited' => 2, 'created_at' => new DateTime('4 days ago')]));
+        $user->addresses()->save(new Address(['city' => 'Ghent', 'country_name' => 'Belgium', 'visited' => 13, 'created_at' => new DateTime('2 days ago')]));
 
         $this->assertEquals(['Paris', 'Bruges', 'Brussels', 'Ghent'], $user->addresses()->pluck('city')->all());
         $this->assertEquals(['Bruges', 'Brussels', 'Ghent', 'Paris'], $user->addresses()->sortBy('city')->pluck('city')->all());
         $this->assertEquals([], $user->addresses()->where('city', 'New York')->pluck('city')->all());
-        $this->assertEquals(['Bruges', 'Brussels', 'Ghent'], $user->addresses()->where('country', 'Belgium')->pluck('city')->all());
-        $this->assertEquals(['Bruges', 'Brussels', 'Ghent'], $user->addresses()->where('country', 'Belgium')->sortBy('city')->pluck('city')->all());
+        $this->assertEquals(['Bruges', 'Brussels', 'Ghent'], $user->addresses()->where('country_name', 'Belgium')->pluck('city')->all());
+        $this->assertEquals(['Bruges', 'Brussels', 'Ghent'], $user->addresses()->where('country_name', 'Belgium')->sortBy('city')->pluck('city')->all());
 
         $results = $user->addresses->first();
         $this->assertInstanceOf('Address', $results);
 
-        $results = $user->addresses()->where('country', 'Belgium');
+        $results = $user->addresses()->where('country_name', 'Belgium');
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $results);
         $this->assertEquals(3, $results->count());
 
@@ -545,8 +563,13 @@ class EmbeddedRelationsTest extends TestCase
         $this->assertInstanceOf(Company::class, $user->father->company);
         $this->assertEquals('Doe does', $user->father->company->name);
 
-        $userFresh = User::with('father.company.users')->find($user->_id);
+        $userFresh = User::with(['company.users','father.company.users'])->find($user->_id);
         $userArray = json_decode(json_encode($userFresh), true);
+        $this->assertTrue(array_key_exists('company', $userArray));
+        $this->assertEquals($company->_id, $userArray['company']['_id']);
+        $this->assertTrue(array_key_exists('users', $userArray['company']));
+        $this->assertEquals(1, count($userArray['company']['users']));
+        $this->assertEquals($userArray['_id'], $userArray['company']['users'][0]['_id']);
 
         $this->assertTrue(array_key_exists('father', $userArray));
         $this->assertTrue(array_key_exists('company', $userArray['father']));
@@ -672,22 +695,22 @@ class EmbeddedRelationsTest extends TestCase
     {
         $user = User::create(['name' => 'John Doe']);
         $father = $user->father()->create(['name' => 'Mark Doe']);
-        $country1 = $father->addresses()->create(['country' => 'France']);
-        $country2 = $father->addresses()->create(['country' => 'Belgium']);
+        $country1 = $father->addresses()->create(['country_name' => 'France']);
+        $country2 = $father->addresses()->create(['country_name' => 'Belgium']);
 
-        $country2->country = 'England';
+        $country2->country_name = 'England';
         $country2->save();
 
         $father->name = 'Steve Doe';
         $father->save();
 
-        $this->assertEquals('France', $user->father->addresses()->first()->country);
-        $this->assertEquals('England', $user->father->addresses()->last()->country);
+        $this->assertEquals('France', $user->father->addresses()->first()->country_name);
+        $this->assertEquals('England', $user->father->addresses()->last()->country_name);
         $this->assertEquals('Steve Doe', $user->father->name);
 
         $user = User::where('name', 'John Doe')->first();
-        $this->assertEquals('France', $user->father->addresses()->first()->country);
-        $this->assertEquals('England', $user->father->addresses()->last()->country);
+        $this->assertEquals('France', $user->father->addresses()->first()->country_name);
+        $this->assertEquals('England', $user->father->addresses()->last()->country_name);
         $this->assertEquals('Steve Doe', $user->father->name);
     }
 
