@@ -78,7 +78,7 @@ DB_DATABASE=dbname
 DB_USERNAME=
 DB_PASSWORD=
 ```
-***Please note, the database user must be an admin since this library create indexes on the fly (design_docs)***
+***Please note, the database user must be an admin since this library creates indexes on the fly (design_docs)***
 
 You can read more about CouchDB Authorization [here](http://docs.couchdb.org/en/2.1.1/intro/security.html#authorization).
 

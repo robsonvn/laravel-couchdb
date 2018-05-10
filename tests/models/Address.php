@@ -10,4 +10,9 @@ class Address extends Eloquent
     {
         return $this->embedsMany('Address');
     }
+
+    public function country()
+    {
+        return $this->belongsTo('Country');
+    }
 }
