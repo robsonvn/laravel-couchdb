@@ -434,6 +434,7 @@ Supported relations are:
  - hasMany
  - belongsTo
  - belongsToMany
+ - morphToMany
  - embedsOne
  - embedsMany
 
@@ -663,7 +664,6 @@ TODO
 ------------
 
 * Add compatibility to work with Full Text Search engine.
-* Add support to MorphToMany relationship.
 * Add support to aggregation, group by and distinct operations.
 * Create a query cursor.
 * Add support to get casted attribute using doting notation.

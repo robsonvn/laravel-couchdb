@@ -221,6 +221,8 @@ class BelongsToMany extends EloquentBelongsToMany
     {
         if ($ids instanceof Model) {
             $ids = (array) $ids->getKey();
+        } else if ($ids instanceof Collection) {
+            $ids = $ids->modelKeys();
         }
 
         $query = $this->newRelatedQuery();
