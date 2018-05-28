@@ -557,7 +557,7 @@ class RelationsTest extends TestCase
         $this->assertEquals([$client->_id], $user->client_ids);
     }
 
-    public function testManyToMany(){
+    public function testMorphToMany(){
       $tag = Tag::create(['name'=>'Commedy']);
 
       $book = Book::create(['title' => 'Decline and Fall']);
