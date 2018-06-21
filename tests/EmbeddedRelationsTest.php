@@ -777,4 +777,49 @@ class EmbeddedRelationsTest extends TestCase
         $this->assertEquals(2, $results->count());
         $this->assertEquals(3, $results->total());
     }
+
+    public function testEmbedsManyGuard(){
+        User::unguard();
+        $user = User::create(['name' => 'John Doe']);
+        User::reguard();
+
+        $user->addresses()->saveMany([
+          new Address(['city' => 'New York']),
+          new Address(['city' => 'Paris']),
+          new Address(['city' => 'Brussels']),
+        ]);
+
+        foreach($user->addresses as $address){
+          $address->post_code = 1010;
+          $address->save();
+        }
+
+        $user->save();
+
+        $userFresh = User::find($user->_id);
+
+        $this->assertEquals(1010, $userFresh->addresses->first()->post_code);
+
+        User::unguard();
+    }
+
+
+    public function testEmbedsOneGuard(){
+        User::unguard();
+        $user = User::create(['name' => 'John Doe']);
+        $father = new User(['name' => 'Mark Doe']);
+        User::reguard();
+
+        $father = $user->father()->save($father);
+
+        $user->father->post_code = 1010;
+
+        $user->father->save();
+
+        $userFresh = User::find($user->_id);
+
+        $this->assertEquals(1010, $userFresh->father->post_code);
+
+        User::unguard();
+    }
 }
