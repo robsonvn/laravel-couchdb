@@ -100,7 +100,15 @@ class EmbedsMany extends EmbedsOneOrMany
             }
         }
 
+
+        $isUnguarded = $this->parent->isUnguarded();
+        $this->parent->unguard();
+
         $result = $this->parent->update([$this->localKey=>$entries]);
+
+        if (!$isUnguarded) {
+            $this->parent->reguard();
+        }
 
         $this->parent->setRelation($this->localKey, $this->toCollection($entries));
 
