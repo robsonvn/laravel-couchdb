@@ -1,4 +1,4 @@
 # Laravel 5 #
-/vendor
-composer.lock
-/.php_cs.cache
+vendor/
+.php_cs.cache
+.idea
