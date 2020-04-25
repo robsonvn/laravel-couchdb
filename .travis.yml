@@ -5,9 +5,12 @@ services:
   - couchdb
 php:
   - 7.1
+  - 7.2
+  - 7.3
 
 before_script:
-  - curl -X PUT localhost:5984/unittest
+  - sleep 5
+  - curl -X PUT localhost:5984/test
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
 

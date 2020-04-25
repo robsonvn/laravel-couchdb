@@ -220,7 +220,7 @@ class Builder extends BaseBuilder
         $direction = 'asc';
 
         //CouchDB 2.0 currently only support a single direction for all fields
-        if (count($this->orders)) {
+        if (is_array($this->orders) && count($this->orders)) {
             $direction = array_unique(array_values($this->orders));
             if (count($direction) > 1) {
                 throw new QueryException('Sort currently only support a single direction for all fields.');
@@ -426,7 +426,7 @@ class Builder extends BaseBuilder
                         return $this->getFindEndpoint($columns, false);
                     }
                 }
-                throw new QueryException('no-index or no matching fields order/selector');
+                throw new QueryException(sprintf('%d - no-index or no matching fields order/selector', $results->status ));
             }
 
             throw new QueryException($results->body['reason']);

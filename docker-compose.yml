@@ -1,0 +1,24 @@
+version: '3.2'
+services:
+
+  couchdb:
+    image: couchdb:2.3.1
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    ports:
+      - "5984:5984"
+      - "6984:6984"
+    restart: always
+
+  php:
+    image: php:7.3.17-cli
+    working_dir: /app
+    volumes:
+      - ./:/app
+    depends_on:
+      - couchdb
+    environment:
+      - COUCHDB_HOST=couchdb
+      - COUCHDB_DB_NAME=test
+volumes:
+  couchdb-data:
