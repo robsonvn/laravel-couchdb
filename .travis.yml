@@ -2,14 +2,14 @@ language: php
 dist: bionic
 sudo: required
 services:
-  - couchdb
+  - docker
 php:
   - 7.1
   - 7.2
   - 7.3
 
 before_script:
-  - sleep 5
+  - docker run -d -p 5984:5984 couchdb:2.3.1
   - curl -X PUT localhost:5984/test
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
