@@ -10,6 +10,7 @@ php:
 
 before_script:
   - docker run -d -p 5984:5984 couchdb:2.3.1
+  - sleep 10
   - curl -X PUT localhost:5984/test
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
