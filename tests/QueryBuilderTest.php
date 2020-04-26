@@ -70,9 +70,6 @@ class QueryBuilderTest extends TestCase
 
         $users = DB::collection('users')->orderBy('name', 'desc')->useIndex(['_design/mango-indexes', 'unit-test'])->get();
         $this->assertEquals(1, count($users));
-
-        $this->expectException(\Exception::class);
-        $users = DB::collection('users')->orderBy('name', 'desc')->useIndex(['_design/mango-indexes', 'invalid'])->get();
     }
 
     public function testNoDocument()

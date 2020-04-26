@@ -8,8 +8,8 @@ return [
             'name'       => 'couchdb',
             'type'       => 'socket',
             'driver'     => 'couchdb',
-            'host'       => 'localhost',
-            'dbname'     => 'unittest',
+            'host'       => getenv('COUCHDB_HOST','localhost'),
+            'dbname'     => getenv('COUCHDB_DB_NAME','test'),
         ],
 
         'mysql' => [

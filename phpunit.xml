@@ -21,4 +21,8 @@
         <directory suffix=".php">./src/</directory>
       </whitelist>
     </filter>
+    <php>
+        <env name="COUCHDB_HOST" value="localhost" force="true" />
+        <env name="COUCHDB_DB_NAME" value="test" force="true" />
+    </php>
 </phpunit>

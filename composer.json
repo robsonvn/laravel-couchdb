@@ -9,6 +9,7 @@
   ],
   "license" : "MIT",
   "require": {
+    "php": "^7.2",
     "illuminate/database": "5.4.*",
     "illuminate/support": "5.4.*",
     "illuminate/container": "5.4.*",
@@ -18,7 +19,7 @@
   },
   "require-dev":{
     "laravel/passport": "^3.0.0",
-    "phpunit/phpunit": "@stable",
+    "phpunit/phpunit": "~6.0",
     "orchestra/testbench": "^3.1",
     "mockery/mockery": "^0.9"
   },
